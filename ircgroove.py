@@ -1,14 +1,9 @@
-# Copyright (c) 2001-2009 Twisted Matrix Laboratories.
-# See LICENSE for details.
-
 # twisted imports
-from twisted.words.protocols import irc
-from twisted.internet import reactor, protocol
-from twisted.python import log
+from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
 
-# system imports
-import sys
+from JlewBot import JlewBotFactory
+
 import os
 
 #UGLY FOR NOW
@@ -20,6 +15,8 @@ file_time = 0
 last_mode = "stopped"
 
 queue = []
+played = []
+song_db = {}
 
 def convert_to_ascii(data):
     try:
@@ -28,7 +25,11 @@ def convert_to_ascii(data):
         d = "UNICODE"
     return d
 
-def check_file_status(irc_bot):
+def check_file_status(irc_bot, channel):
+    if hasattr(irc_bot, 'active_bot') and irc_bot.active_bot:
+        irc_bot = irc_bot.active_bot
+    else:
+        return
     global file_time
     global last_mode
     global file_name
@@ -41,13 +42,14 @@ def check_file_status(irc_bot):
         f.close()
         file_time = new_time
 
-        irc_bot.send_mesg( msg )
+        irc_bot.me( channel, msg )
 
         if fc[3] == 'stopped':
                 try:
                     global queue
                     id = queue.pop(0)
-                    print "TO QUEUE", id
+                    global played
+                    played.append(id)
                     play_song( id )
                 except:
                     pass
@@ -58,12 +60,21 @@ def get_song_info(song_search):
     search_text = quote_plus( song_search )
     url = "http://tinysong.com/b/%s?format=json" % search_text
 
-    return load( urlopen( url ) )
+    data = load( urlopen( url ) )
+
+    if len(data):
+        global song_db
+        song_db[data['SongID']] = data
+
+    return data
 
 def queue_song(id):
     global last_mode
     if last_mode == "stopped":
+        global played
+        played.append(id)
         play_song(id)
+
     else:
         global queue
         queue.append(id)
@@ -74,93 +85,67 @@ def play_song(id):
     f.write("playsong %d\n" % id)
     f.close()
 
-class LogBot(irc.IRCClient):
-    """A logging IRC bot."""
-    nickname = "fossgroovebot"
+def request_queue_song( responder, user, channel, command, msg):
+    if command == "add":
+        responder("Got Request, processing")
+        song_packet = get_song_info(msg)
 
-    # callbacks for events
+        global played
+        global queue
 
-    def check_file(self):
-        check_file_status( self )
+        if len( song_packet ) == 0:
+            responder("API returned empty set")
 
-    def send_mesg(self, message):
-        self.msg(self.factory.channel, message)
+        elif song_packet['SongID'] in played:
+            responder("Error \"%s\" by \"%s\" has been played" % (\
+                convert_to_ascii(song_packet['SongName']),
+                convert_to_ascii(song_packet['ArtistName']),
+                ))
 
-    def signedOn(self):
-        """Called when bot has succesfully signed on to server."""
-        self.join(self.factory.channel)
-        
-        lc = LoopingCall(self.check_file).start( 2 )
+        elif song_packet['SongID'] in queue:
+            responder("Error \"%s\" by \"%s\" is in queue" % (\
+                convert_to_ascii(song_packet['SongName']),
+                convert_to_ascii(song_packet['ArtistName']),
+                ))
+        else:
+            responder("Queueing %s: \"%s\" by \"%s\" on \"%s\"" % (\
+                song_packet['SongID'],
+                convert_to_ascii(song_packet['SongName']),
+                convert_to_ascii(song_packet['ArtistName']),
+                convert_to_ascii(song_packet['AlbumName'])
+                ))
+            queue_song( song_packet['SongID'] )
 
+    elif command == "remove":
+        global queue
+        try:
+            id = int(msg)
+            queue.remove( id )
+            try:
+                global song_db
+                name = "%s by %s" %(convert_to_ascii(song_db[id]['SongName']) , convert_to_ascii(song_db[id]['ArtistName']))
+            except:
+                name = msg
+            responder( "Removed %s" % name )
+        except:
+            responder( "Could not remove %s" % msg )
 
-    def privmsg(self, user, channel, msg):
-        """This will get called when the bot receives a message."""
-        user = user.split('!', 1)[0]
-        print("<%s> %s" % (user, msg))
-        
-        # Check to see if they're sending me a private message
-        if channel == self.nickname:
-            msg = "It isn't nice to whisper!  Play nice with the group."
-            self.msg(user, msg)
-            return
-
-        # Otherwise check to see if it is a message directed at me
-        if msg.startswith(self.nickname + ":"):
-
-            song_request = msg[len(self.nickname)+1:].strip()
-
-            if song_request == "oops":
-                global queue
-                queue.pop()
-                self.msg(channel, "Dropped last request")
-
-            else:
-                song_packet = get_song_info(song_request)
-
-                if len( song_packet ) == 0:
-                    self.msg(channel, "API returned empty set")
-                else:
-
-                    msg = "Queueing \"%s\" by \"%s\" on \"%s\"" % (\
-                        convert_to_ascii(song_packet['SongName']),
-                        convert_to_ascii(song_packet['ArtistName']),
-                        convert_to_ascii(song_packet['AlbumName'])
-                        )
-
-                    self.msg(channel, msg)
-
-                    queue_song( song_packet['SongID'] )
-
-class LogBotFactory(protocol.ClientFactory):
-    """A factory for LogBots.
-
-    A new protocol instance will be created each time we connect to the server.
-    """
-
-    # the class of the protocol to build when new connection is made
-    protocol = LogBot
-
-    def __init__(self, channel):
-        self.channel = channel
-
-    def clientConnectionLost(self, connector, reason):
-        """If we get disconnected, reconnect to server."""
-        connector.connect()
-
-    def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
-        reactor.stop()
+    elif command == "show":
+        global queue
+        global song_db
+        songNames = []
+        for id in queue:
+            songNames.append( "%s by %s" %(convert_to_ascii(song_db[id]['SongName']), convert_to_ascii(song_db[id]['ArtistName'])))
+        responder(", ".join(songNames))
 
 
 if __name__ == '__main__':
-    # initialize logging
-    log.startLogging(sys.stdout)
-
-    # create factory protocol and application
-    f = LogBotFactory(sys.argv[1])
-
-    # connect factory to this host and port
+    f = JlewBotFactory("#jlew-test", name="foss_groovebot")
+    f.register_command('add', request_queue_song)
+    f.register_command('remove', request_queue_song)
+    f.register_command('show', request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
-    # run bot
+    lc = LoopingCall(check_file_status, f, "#jlew-test").start( 2 )
+
     reactor.run()
