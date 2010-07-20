@@ -36,11 +36,15 @@ def check_file_status(irc_bot, channel):
     new_time = os.stat( file_name ).st_mtime
 
     if new_time > file_time:
-        f = open( file_name, 'r' )
-        fc = f.read().split('\t')
+        try:
+            f = open( file_name, 'r' )
+            fc = f.read().split('\t')
+            f.close()
+            file_time = new_time
+        except:
+            pass
         msg = "%s: \"%s\" by \"%s\" on \"%s\"" % (convert_to_ascii(fc[3]), convert_to_ascii(fc[0]), convert_to_ascii(fc[1]), convert_to_ascii(fc[2]))
         f.close()
-        file_time = new_time
 
         irc_bot.me( channel, msg )
 
@@ -140,12 +144,12 @@ def request_queue_song( responder, user, channel, command, msg):
 
 
 if __name__ == '__main__':
-    f = JlewBotFactory("#jlew-test", name="foss_groovebot")
+    f = JlewBotFactory("#rit-groove", name="foss_groovebot")
     f.register_command('add', request_queue_song)
     f.register_command('remove', request_queue_song)
     f.register_command('show', request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
-    lc = LoopingCall(check_file_status, f, "#jlew-test").start( 2 )
+    lc = LoopingCall(check_file_status, f, "#rit-groove").start( 2 )
 
     reactor.run()
