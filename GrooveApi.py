@@ -71,7 +71,7 @@ class GrooveApi:
 
     #TO BE REMOVED ONCE UPDATE ADDED
     def queue_song(self, id):
-        if self.__last_mode == "stopped":
+        if self.__last_mode == "stopped" and len(self.__queue) == 0:
             self.play_song(id)
         else:
             self.__queue.append(id)
