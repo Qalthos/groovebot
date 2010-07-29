@@ -1,5 +1,5 @@
 # twisted imports
-from twisted.internet import reactor
+from twisted.internet import reactor, threads
 from twisted.internet.task import LoopingCall
 
 from GrooveApi import GrooveApi
@@ -17,14 +17,8 @@ def convert_to_ascii(data):
         d = unicodedata.normalize('NFKD', data).encode('ascii','ignore')
     return d
 
-def check_file_status(irc_bot, channel):
-    if hasattr(irc_bot, 'active_bot') and irc_bot.active_bot:
-        irc_bot = irc_bot.active_bot
-    else:
-        return
 
-    global api_inst
-    s = api_inst.get_file_status()
+def _file_status(s, bot, channel):
     if s:
         msg = "%s: \"%s\" by \"%s\" on \"%s\"" % \
                 (convert_to_ascii(s['status']),
@@ -33,17 +27,24 @@ def check_file_status(irc_bot, channel):
                  convert_to_ascii(s['album']))
 
         if s['status'] == 'stopped':
-            api_inst.auto_play()
+            threads.deferToThread(api_inst.auto_play).addErrback(to_print)
 
-        irc_bot.me( channel, msg )
+        bot.me( channel, msg )
 
-def request_queue_song( responder, user, channel, command, msg):
+
+def check_file_status(irc_bot, channel):
+    if hasattr(irc_bot, 'active_bot') and irc_bot.active_bot:
+        irc_bot = irc_bot.active_bot
+    else:
+        return
+
     global api_inst
-    if command == "add":
-        responder("Got Request, processing")
+    threads.deferToThread(api_inst.get_file_status).addCallback(_file_status, irc_bot, channel).addErrback(_err, to_print )
 
-        song_packet = api_inst.request_song_from_api(msg)
+def to_print(x):
+    print "Error Caught by to_print:",x
 
+def _add_lookup_cb(song_packet, responder):
         if not song_packet:
             responder("API Threw Exception, try again")
             return
@@ -69,7 +70,21 @@ def request_queue_song( responder, user, channel, command, msg):
                 convert_to_ascii(song_packet['ArtistName']),
                 convert_to_ascii(song_packet['AlbumName'])
                 ))
-            api_inst.queue_song( song_packet['SongID'] )
+            global api_inst
+            threads.deferToThread(api_inst.queue_song, song_packet['SongID']).addErrback(_err, responder)
+
+def _ok(msg, responder):
+    responder("OK")
+
+def _err(err, responder):
+    responder( "ERROR Occurred %s" % str(err) )
+
+def request_queue_song( responder, user, channel, command, msg):
+    global api_inst
+    if command == "add":
+        responder("Got Request, processing")
+
+        threads.deferToThread(api_inst.request_song_from_api, msg).addCallback(_add_lookup_cb, responder).addErrback(_err, responder)
 
     elif command == "remove":
         try:
@@ -90,24 +105,22 @@ def request_queue_song( responder, user, channel, command, msg):
         responder(", ".join(songNames))
 
     elif command == "pause":
-        api_inst.api_pause()
+        threads.deferToThread(api_inst.api_pause).addCallback(_ok, responder).addErrback(_err, responder)
 
     elif command == "resume":
-        api_inst.api_play()
+        threads.deferToThread(api_inst.api_play).addCallback(_ok, responder).addErrback(_err, responder)
 
     elif command == "skip":
-        api_inst.api_stop()
+        threads.deferToThread(api_inst.api_stop).addCallback(_ok, responder).addErrback(_err, responder)
 
         # this is a hack, stop so that we autoqueue
         #api_inst.api_next()
 
     elif command == "volup":
-        api_inst.api_volume_up()
-        responder("ACK")
+        threads.deferToThread(api_inst.api_volume_up).addCallback(_ok, responder).addErrback(_err, responder)
 
     elif command == "voldown":
-        api_inst.api_volume_down()
-        responder("ACK")
+        threads.deferToThread(api_inst.api_volume_down).addCallback(_ok, responder).addErrback(_err, responder)
 
 if __name__ == '__main__':
     f = JlewBotFactory("#rit-groove", name="foss_groovebot")

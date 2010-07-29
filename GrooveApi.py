@@ -41,16 +41,17 @@ class GrooveApi:
                 fc = f.read().split('\t')
                 f.close()
                 self.__file_time = new_time
+
+                self.__last_mode = fc[3]
+                return {
+                    'title': fc[0],
+                    'artist': fc[2],
+                    'album': fc[1],
+                    'status': fc[3]
+                }
+
             except:
                 pass
-
-            self.__last_mode = fc[3]
-            return {
-                    'title': fc[0],
-                    'artist': fc[1],
-                    'album': fc[2],
-                    'status': fc[3]
-                    }
 
         else:
             return False
