@@ -122,7 +122,7 @@ def request_queue_song( responder, user, channel, command, msg):
         #threads.deferToThread(api_inst.api_volume_up).addCallback(_ok, responder).addErrback(_err, responder)
         global vol
         if vol < 100:
-            vol += 10
+            vol += 5
             utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' % vol]).addCallback(_ok, responder, str(vol)).addErrback(_err, responder)
         else:
             responder( "Volume Maxed" )
@@ -131,7 +131,7 @@ def request_queue_song( responder, user, channel, command, msg):
         #threads.deferToThread(api_inst.api_volume_down).addCallback(_ok, responder).addErrback(_err, responder)
         global vol
         if vol > 0:
-            vol -= 10
+            vol -= 5
             utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' %vol]).addCallback(_ok, responder, str(vol)).addErrback(_err, responder)
         else:
             responder( "NO!" )
