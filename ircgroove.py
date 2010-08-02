@@ -1,5 +1,5 @@
 # twisted imports
-from twisted.internet import reactor, threads
+from twisted.internet import reactor, threads, utils
 from twisted.internet.task import LoopingCall
 
 from GrooveApi import GrooveApi
@@ -8,6 +8,8 @@ from JlewBot import JlewBotFactory
 
 api_inst = GrooveApi('/home/jlew/Documents/Grooveshark/currentSong.txt',
 '/home/jlew/.appdata/GroovesharkDesktop.7F9BF17D6D9CB2159C78A6A6AB076EA0B1E0497C.1/Local Store/shortcutAction.txt')
+
+vol = 50
 
 import unicodedata
 def convert_to_ascii(data):
@@ -73,8 +75,8 @@ def _add_lookup_cb(song_packet, responder):
             global api_inst
             threads.deferToThread(api_inst.queue_song, song_packet['SongID']).addErrback(_err, responder)
 
-def _ok(msg, responder):
-    responder("OK")
+def _ok(msg, responder, extra=""):
+    responder("OK %s" % extra)
 
 def _err(err, responder):
     responder( "ERROR Occurred %s" % str(err) )
@@ -117,10 +119,26 @@ def request_queue_song( responder, user, channel, command, msg):
         #api_inst.api_next()
 
     elif command == "volup":
-        threads.deferToThread(api_inst.api_volume_up).addCallback(_ok, responder).addErrback(_err, responder)
+        #threads.deferToThread(api_inst.api_volume_up).addCallback(_ok, responder).addErrback(_err, responder)
+        global vol
+        if vol < 100:
+            vol += 10
+            utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' % vol]).addCallback(_ok, responder, str(vol)).addErrback(_err, responder)
+        else:
+            responder( "Volume Maxed" )
 
     elif command == "voldown":
-        threads.deferToThread(api_inst.api_volume_down).addCallback(_ok, responder).addErrback(_err, responder)
+        #threads.deferToThread(api_inst.api_volume_down).addCallback(_ok, responder).addErrback(_err, responder)
+        global vol
+        if vol > 0:
+            vol -= 10
+            utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' %vol]).addCallback(_ok, responder, str(vol)).addErrback(_err, responder)
+        else:
+            responder( "NO!" )
+
+def set_vol():
+    utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '50%'])
+
 
 if __name__ == '__main__':
     f = JlewBotFactory("#rit-groove", name="foss_groovebot")
@@ -129,6 +147,7 @@ if __name__ == '__main__':
         f.register_command(command, request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
+    reactor.callWhenRunning(set_vol)
     lc = LoopingCall(check_file_status, f, "#rit-groove").start( 2 )
 
     reactor.run()
