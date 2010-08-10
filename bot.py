@@ -19,8 +19,8 @@ class GrooveClient(IRCClient):
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
         print "Joined %s" % channel
-        self.talk("show")
         self.talk("status")
+        self.talk("show")
 
     def left(self, channel):
         """This will get called when the bot leaves the channel."""
