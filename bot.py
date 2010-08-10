@@ -44,6 +44,7 @@ class GrooveClient(IRCClient):
         return
         
     def talk(self, command, data=""):
+        """Just a small wrapper to self.msg."""
         # Commands with args
         self.msg(self.groovebot, "%s%s" % (command, data))
 
@@ -83,40 +84,43 @@ class GrooveClientFactory(ClientFactory):
 
     def __default_cmd(self, channel, msg):
         msg_parts = msg.split(": ")
+        user = msg_parts[0]
         if channel == self.active_bot.nickname:
             msg_parts.insert(0, self.active_bot.nickname)
+            
         if len(msg_parts) < 2:
             return
         command = msg_parts[1]
-        
-        if command[:2] == "OK":
+
+        # This has the annoying habit of returning a second entry of an empty
+        # string on empty queues.  If this happens, just return, we don't care
+        # about it.
+        if command == "":
+            return
+            
+        if command == "stopped":
+            self.gui.remove(text=msg_parts[2])
+        elif command == "loading":
+            pass
+        elif command == "playing":
+            self.gui.pause_toggle(command)
+            self.gui.now_playing(msg_parts[2])
+        elif command == "paused":
+            self.gui.pause_toggle(command)
+            self.gui.now_playing(msg_parts[2])
+        elif command.split()[0] == "OK":
             if len(command) > 3:
                 #Volume has changed
                 volume = command.split()[1]
                 self.gui.volmod(volume)
-        elif msg_parts[1][:3] == "Que":
-            self.gui.add(msg_parts[0], msg_parts[1].split()[1], msg_parts[2])
-            print "%s queued." % msg_parts[2]
-        elif msg_parts[0] == "stopped":
-            self.gui.remove(text=msg_parts[1])
-            print "Song finished."
-        elif msg_parts[0] == "playing":
-            self.gui.pause_toggle(msg_parts[0])
-            self.gui.now_playing(msg_parts[1])
-            print "%s now playing." % msg_parts[1]
-        elif command == "playing":
-            self.gui.pause_toggle(command)
-            self.gui.now_playing(msg_parts[2])
-            print "%s is now playing." % msg_parts[2]
-        elif command == "paused":
-            self.gui.pause_toggle(command)
-            self.gui.now_playing(msg_parts[2])
-            print "%s is paused." % msg_parts[2]
+            # Implicit else ignore
+        elif command.split()[0] == "Queueing":
+            self.gui.add(user, command.split()[1], msg_parts[2])
         elif command.split()[0] == "Removed":
             removed_id = command.split()[1]
             self.gui.remove(song_id=removed_id)
             return
-        elif command.split()[0] == "Got" or command.split()[0] == "Available":
+        elif command.split()[0] == "Got" or command.split()[0] == "Available" or command.split()[0] == "Error":
             # Ignore these replies.
             return
         else:
