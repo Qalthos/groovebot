@@ -10,6 +10,7 @@ api_inst = GrooveApi('/home/jlew/Documents/Grooveshark/currentSong.txt',
 '/home/jlew/.appdata/GroovesharkDesktop.7F9BF17D6D9CB2159C78A6A6AB076EA0B1E0497C.1/Local Store/shortcutAction.txt')
 
 vol = 50
+last_msg = ""
 
 import unicodedata
 def convert_to_ascii(data):
@@ -30,7 +31,8 @@ def _file_status(s, bot, channel):
 
         if s['status'] == 'stopped':
             threads.deferToThread(api_inst.auto_play).addErrback(to_print)
-
+        global last_msg
+        last_msg = msg
         bot.me( channel, msg )
 
 
@@ -136,6 +138,10 @@ def request_queue_song( responder, user, channel, command, msg):
         else:
             responder( "NO!" )
 
+    elif command == "status":
+        global last_msg
+        responder(last_msg)
+
 def set_vol():
     utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '50%'])
 
@@ -143,7 +149,7 @@ def set_vol():
 if __name__ == '__main__':
     f = JlewBotFactory("#rit-groove", name="foss_groovebot")
 
-    for command in ['add','remove','show','pause','resume','skip','volup','voldown']:
+    for command in ['add','remove','show','pause','resume','skip','volup','voldown', 'status']:
         f.register_command(command, request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
