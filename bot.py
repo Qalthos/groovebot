@@ -35,7 +35,8 @@ class GrooveClient(IRCClient):
             self.factory.handle_command(channel, msg)
 
     def action(self, user, channel, data):
-        self.privmsg(user, channel, data)
+        """This will get called when the bot sees an action in channel."""
+        self.privmsg(user, channel, "%s: %s" % (user, data))
 
     def noticed(self, user, channel, message):
         """Called when a notice from user or channel"""
