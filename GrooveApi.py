@@ -41,16 +41,17 @@ class GrooveApi:
                 fc = f.read().split('\t')
                 f.close()
                 self.__file_time = new_time
+
+                self.__last_mode = fc[3]
+                return {
+                    'title': fc[0],
+                    'artist': fc[2],
+                    'album': fc[1],
+                    'status': fc[3]
+                }
+
             except:
                 pass
-
-            self.__last_mode = fc[3]
-            return {
-                    'title': fc[0],
-                    'artist': fc[1],
-                    'album': fc[2],
-                    'status': fc[3]
-                    }
 
         else:
             return False
@@ -70,7 +71,7 @@ class GrooveApi:
 
     #TO BE REMOVED ONCE UPDATE ADDED
     def queue_song(self, id):
-        if self.__last_mode == "stopped":
+        if self.__last_mode == "stopped" and len(self.__queue) == 0:
             self.play_song(id)
         else:
             self.__queue.append(id)
