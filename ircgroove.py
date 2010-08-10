@@ -105,7 +105,7 @@ def request_queue_song( responder, user, channel, command, msg):
         songNames = []
         song_db = api_inst.song_db
         for id in api_inst.queue:
-            songNames.append( "%s by %s" %(convert_to_ascii(song_db[id]['SongName']), convert_to_ascii(song_db[id]['ArtistName'])))
+            songNames.append( "\"%s\" by \"%s\"" %(convert_to_ascii(song_db[id]['SongName']), convert_to_ascii(song_db[id]['ArtistName'])))
         responder(", ".join(songNames))
 
     elif command == "pause":
