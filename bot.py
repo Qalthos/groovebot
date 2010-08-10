@@ -30,8 +30,8 @@ class GrooveClient(IRCClient):
         """This will get called when the bot receives a message."""
         user = user.split('!', 1)[0]
 
-        # Message said in channel to the bot
-        if user == self.groovebot or channel == self.nickname:
+        # I don't really care where the message comes from
+        if user == self.groovebot:
             self.factory.handle_command(channel, msg)
 
     def action(self, user, channel, data):
