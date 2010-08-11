@@ -108,6 +108,14 @@ def request_queue_song( responder, user, channel, command, msg):
             songNames.append( "\"%s\" by \"%s\"" %(convert_to_ascii(song_db[id]['SongName']), convert_to_ascii(song_db[id]['ArtistName'])))
         responder(", ".join(songNames))
 
+    elif command == "dump":
+        song_db = api_inst.song_db
+        for id in api_inst.queue:
+            responder( "%d: \"%s\" by \"%s\" on \"%s\"" % ( id, 
+                                   convert_to_ascii(song_db[id]['SongName']),
+                                   convert_to_ascii(song_db[id]['ArtistName']),
+                                   convert_to_ascii(song_db[id]['AlbumName'])))
+
     elif command == "pause":
         threads.deferToThread(api_inst.api_pause).addCallback(_ok, responder).addErrback(_err, responder)
 
@@ -142,6 +150,10 @@ def request_queue_song( responder, user, channel, command, msg):
         global last_msg
         responder(last_msg)
 
+    elif command == "vol":
+        global vol
+        responder(vol)
+
 def set_vol():
     utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '50%'])
 
@@ -149,7 +161,7 @@ def set_vol():
 if __name__ == '__main__':
     f = JlewBotFactory("#rit-groove", name="foss_groovebot")
 
-    for command in ['add','remove','show','pause','resume','skip','volup','voldown', 'status']:
+    for command in ['add','remove','show','pause','resume','skip','volup','voldown','vol','status','dump']:
         f.register_command(command, request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
