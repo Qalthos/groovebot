@@ -11,6 +11,7 @@ api_inst = GrooveApi('/home/jlew/Documents/Grooveshark/currentSong.txt',
 
 vol = 50
 last_msg = ""
+song_request_db = {}
 
 import unicodedata
 def convert_to_ascii(data):
@@ -48,7 +49,7 @@ def check_file_status(irc_bot, channel):
 def to_print(x):
     print "Error Caught by to_print:",x
 
-def _add_lookup_cb(song_packet, responder):
+def _add_lookup_cb(song_packet, responder, user):
         if not song_packet:
             responder("API Threw Exception, try again")
             return
@@ -75,6 +76,8 @@ def _add_lookup_cb(song_packet, responder):
                 convert_to_ascii(song_packet['AlbumName'])
                 ))
             global api_inst
+            global song_request_db
+            song_request_db[song_packet['SongID']] = user
             threads.deferToThread(api_inst.queue_song, song_packet['SongID']).addErrback(_err, responder)
 
 def _ok(msg, responder, extra=""):
@@ -88,7 +91,7 @@ def request_queue_song( responder, user, channel, command, msg):
     if command == "add":
         responder("Got Request, processing")
 
-        threads.deferToThread(api_inst.request_song_from_api, msg).addCallback(_add_lookup_cb, responder).addErrback(_err, responder)
+        threads.deferToThread(api_inst.request_song_from_api, msg).addCallback(_add_lookup_cb, responder, user).addErrback(_err, responder)
 
     elif command == "remove":
         try:
@@ -109,9 +112,11 @@ def request_queue_song( responder, user, channel, command, msg):
         responder(", ".join(songNames))
 
     elif command == "dump":
+        global song_request_id
         song_db = api_inst.song_db
         for id in api_inst.queue:
-            responder( "%d: \"%s\" by \"%s\" on \"%s\"" % ( id, 
+            responder( "%d [%s]: \"%s\" by \"%s\" on \"%s\"" % ( id, 
+                                   song_request_db[id],
                                    convert_to_ascii(song_db[id]['SongName']),
                                    convert_to_ascii(song_db[id]['ArtistName']),
                                    convert_to_ascii(song_db[id]['AlbumName'])))
