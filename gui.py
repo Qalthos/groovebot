@@ -36,18 +36,15 @@ class GrooveGui:
         self._queue_box.add(song)
         self._queue_box.set_child_packing(song, 0, 1, 0, gtk.PACK_START)
         song.show()
-        self.queue_keeper[song_id] = {"label": song, "text": text}
+        self.queue_keeper[song_id] = {"requester": requester, "label": song, "text": text}
 
     def remove(self, song_id="", text=""):
         if not song_id == "":
             self._queue_box.remove(self.queue_keeper[song_id]["label"])
             return
         elif not text == "":
-            print "Trying to remove '%s'" % text
             for id, song in self.queue_keeper.items():
-                print "Is it %s ?" % song["text"]
                 if text.startswith(song["text"]):
-                    print "Found song id %s" % id
                     self._queue_box.remove(song["label"])
                     return
         print "Couldn't remove %s%s" % (song_id, text)
