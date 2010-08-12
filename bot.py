@@ -19,8 +19,9 @@ class GrooveClient(IRCClient):
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
         print "Joined %s" % channel
-        self.talk("status")
-        self.talk("show")
+        self.whisper("vol")
+        self.whisper("status")
+        self.whisper("dump")
 
     def left(self, channel):
         """This will get called when the bot leaves the channel."""
@@ -43,10 +44,15 @@ class GrooveClient(IRCClient):
         # Must not reply
         return
         
+    def whisper(self, command):
+        """Just a small wrapper to self.msg."""
+        # Commands with args
+        self.msg(self.groovebot, "%s" % (command))
+        
     def talk(self, command, data=""):
         """Just a small wrapper to self.msg."""
         # Commands with args
-        self.msg(self.groovebot, "%s%s" % (command, data))
+        self.msg(self.factory.channel, "%s: %s%s" % (self.groovebot, command, data))
 
 class GrooveClientFactory(ClientFactory):
     protocol = GrooveClient
