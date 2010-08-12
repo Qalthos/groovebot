@@ -112,9 +112,9 @@ class GrooveClientFactory(ClientFactory):
             # We can't rely on recieving a loading cue.
             pass
         elif command in ["playing", "paused"]:
-            self.gui.remove(text=msg_parts[2])
             self.gui.pause_toggle(command)
             self.gui.now_playing(msg_parts[2])
+            self.gui.remove(text=msg_parts[2])
         # Volume handlers
         elif command.split()[0] == "OK":
             if len(command) > 3:
