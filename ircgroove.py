@@ -11,6 +11,7 @@ api_inst = GrooveApi('/home/jlew/Documents/Grooveshark/currentSong.txt',
 
 vol = 50
 last_msg = ""
+song_request_db = {}
 
 import unicodedata
 def convert_to_ascii(data):
@@ -48,7 +49,7 @@ def check_file_status(irc_bot, channel):
 def to_print(x):
     print "Error Caught by to_print:",x
 
-def _add_lookup_cb(song_packet, responder):
+def _add_lookup_cb(song_packet, responder, user):
         if not song_packet:
             responder("API Threw Exception, try again")
             return
@@ -75,6 +76,8 @@ def _add_lookup_cb(song_packet, responder):
                 convert_to_ascii(song_packet['AlbumName'])
                 ))
             global api_inst
+            global song_request_db
+            song_request_db[song_packet['SongID']] = user
             threads.deferToThread(api_inst.queue_song, song_packet['SongID']).addErrback(_err, responder)
 
 def _ok(msg, responder, extra=""):
@@ -88,7 +91,7 @@ def request_queue_song( responder, user, channel, command, msg):
     if command == "add":
         responder("Got Request, processing")
 
-        threads.deferToThread(api_inst.request_song_from_api, msg).addCallback(_add_lookup_cb, responder).addErrback(_err, responder)
+        threads.deferToThread(api_inst.request_song_from_api, msg).addCallback(_add_lookup_cb, responder, user).addErrback(_err, responder)
 
     elif command == "remove":
         try:
@@ -107,6 +110,16 @@ def request_queue_song( responder, user, channel, command, msg):
         for id in api_inst.queue:
             songNames.append( "\"%s\" by \"%s\"" %(convert_to_ascii(song_db[id]['SongName']), convert_to_ascii(song_db[id]['ArtistName'])))
         responder(", ".join(songNames))
+
+    elif command == "dump":
+        global song_request_id
+        song_db = api_inst.song_db
+        for id in api_inst.queue:
+            responder( "%d [%s]: \"%s\" by \"%s\" on \"%s\"" % ( id, 
+                                   song_request_db[id],
+                                   convert_to_ascii(song_db[id]['SongName']),
+                                   convert_to_ascii(song_db[id]['ArtistName']),
+                                   convert_to_ascii(song_db[id]['AlbumName'])))
 
     elif command == "pause":
         threads.deferToThread(api_inst.api_pause).addCallback(_ok, responder).addErrback(_err, responder)
@@ -142,6 +155,10 @@ def request_queue_song( responder, user, channel, command, msg):
         global last_msg
         responder(last_msg)
 
+    elif command == "vol":
+        global vol
+        responder(vol)
+
 def set_vol():
     utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '50%'])
 
@@ -149,7 +166,7 @@ def set_vol():
 if __name__ == '__main__':
     f = JlewBotFactory("#rit-groove", name="foss_groovebot")
 
-    for command in ['add','remove','show','pause','resume','skip','volup','voldown', 'status']:
+    for command in ['add','remove','show','pause','resume','skip','volup','voldown','vol','status','dump']:
         f.register_command(command, request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
