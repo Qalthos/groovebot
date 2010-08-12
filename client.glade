@@ -44,6 +44,7 @@
               <object class="GtkLabel" id="now_playing">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Now Playing: </property>
+                <property name="justify">center</property>
               </object>
               <packing>
                 <property name="position">2</property>
