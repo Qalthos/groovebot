@@ -52,7 +52,7 @@ class GrooveClient(IRCClient):
     def talk(self, command, data=""):
         """Just a small wrapper to self.msg."""
         # Commands with args
-        self.msg(self.factory.channel, "%s: %s%s" % (self.groovebot, command, data))
+        self.msg(self.factory.channel, "%s: %s %s" % (self.groovebot, command, data))
 
 class GrooveClientFactory(ClientFactory):
     protocol = GrooveClient
