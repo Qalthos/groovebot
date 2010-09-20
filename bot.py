@@ -98,7 +98,7 @@ class GrooveClientFactory(ClientFactory):
             return
 
         command = msg_parts[1]
-        ignored = ["Got", "Available", "Error", "Command"]
+        ignored = ["Got", "Available", "Error", "Command", "API"]
 
         # This has the annoying habit of returning a second entry of an empty
         # string on empty queues.  If this happens, just return, we don't care
