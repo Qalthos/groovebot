@@ -113,6 +113,7 @@
                 <property name="label" translatable="yes">??</property>
               </object>
               <packing>
+                <property name="expand">False</property>
                 <property name="position">1</property>
               </packing>
             </child>
@@ -129,6 +130,29 @@
                 <property name="expand">False</property>
                 <property name="fill">False</property>
                 <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="req_box">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">&#x25CF;</property>
+              </object>
+              <packing>
+                <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="req_button">
+                <property name="label" translatable="yes">Request!</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <signal name="clicked" handler="request"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">4</property>
               </packing>
             </child>
           </object>
@@ -170,4 +194,6 @@
     <property name="visible">True</property>
     <property name="stock">audio-volume-low</property>
   </object>
+  <object class="GtkAction" id="action1"/>
+  <object class="GtkAction" id="action2"/>
 </interface>

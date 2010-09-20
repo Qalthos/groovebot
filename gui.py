@@ -10,6 +10,7 @@ class GrooveGui:
         self.builder.add_from_file("client.glade")
         
         dic = {"action": self.action,
+            "request": self.request,
             "quit": self.quit}
         self.builder.connect_signals(dic)
 
@@ -18,7 +19,7 @@ class GrooveGui:
         self.queue_keeper = {}
 
     def load_widgets_from_glade(self):
-        widgets = ("volup", "volume", "voldown", "queue_box",
+        widgets = ("volup", "volume", "voldown", "queue_box", "req_box",
                    "resume", "pause", "now_playing", "main_window")
         gw = self.builder.get_object
         for widget_name in widgets:
@@ -43,7 +44,7 @@ class GrooveGui:
                 print "Couldn't remove %s %s" % (song_id, text)
                 return
         elif song_id:
-            song = self.queue_feeper[song_id]
+            song = self.queue_keeper[song_id]
         
         self._queue_box.remove(song["label"])
 
@@ -79,6 +80,11 @@ class GrooveGui:
     def action(self, widget):
         widget_name = gtk.Buildable.get_name(widget)
         self.client_factory.active_bot.talk(widget_name)
+        
+    def request(self, widget):
+        song = self._req_box.get_text()
+        self._req_box.set_text("")
+        self.client_factory.active_bot.talk("add", song)
 
     def quit(self, widget):
         reactor.callLater(0.5, reactor.stop)
