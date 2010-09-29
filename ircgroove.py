@@ -133,6 +133,12 @@ def request_queue_song( responder, user, channel, command, msg):
         # this is a hack, stop so that we autoqueue
         #api_inst.api_next()
 
+    elif command == "radio_on":
+        threads.deferToThread(api_inst.api_radio_on).addCallback(_ok, responder).addErrback(_err, responder)
+
+    elif command == "radio_off":
+        threads.deferToThread(api_inst.api_radio_off).addCallback(_ok, responder).addErrback(_err, responder)
+
     elif command == "volup":
         #threads.deferToThread(api_inst.api_volume_up).addCallback(_ok, responder).addErrback(_err, responder)
         global vol
@@ -166,7 +172,7 @@ def set_vol():
 if __name__ == '__main__':
     f = JlewBotFactory("#rit-groove", name="foss_groovebot")
 
-    for command in ['add','remove','show','pause','resume','skip','volup','voldown','vol','status','dump']:
+    for command in ['add','remove','show','pause','resume','skip','volup','voldown','vol','status','dump','radio_on','radio_off']:
         f.register_command(command, request_queue_song)
     reactor.connectTCP("irc.freenode.net", 6667, f)
 
