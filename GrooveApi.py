@@ -80,17 +80,15 @@ class GrooveApi:
     def play_song(self, id):
         self.__played.append(id)
         self.api_play_id(id)
-        if len(self.queue):
-            self.api_radio_off()
-        else:
-            self.api_radio_on()
 
     #TO BE REMOVED ONCE UPDATE ADDED
     def auto_play(self):
         try:
             id = self.__queue.pop(0)
             self.play_song(id)
+            self.api_raido_off()
         except:
+            self.api_radio_on()
             pass
 
     #TO BE REMOVED ONCE UPDATE ADDED
