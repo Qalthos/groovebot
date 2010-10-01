@@ -71,6 +71,7 @@ class GrooveApi:
 
     #TO BE REMOVED ONCE UPDATE ADDED
     def queue_song(self, id):
+        self.apt_radio_off()
         if self.__last_mode == "stopped" and len(self.__queue) == 0:
             self.play_song(id)
         else:
@@ -86,7 +87,6 @@ class GrooveApi:
         try:
             id = self.__queue.pop(0)
             self.play_song(id)
-            self.api_raido_off()
         except:
             self.api_radio_on()
             pass
