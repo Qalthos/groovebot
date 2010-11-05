@@ -16,12 +16,13 @@
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with OpenVideoChat.  If not, see <http://www.gnu.org/licenses/>.
+#    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
 
 from json import load
 from urllib import urlopen, quote_plus
 from os import stat
+from time import sleep
 
 class GrooveApi:
     def __init__(self, file_path, remote_path):
@@ -86,11 +87,15 @@ class GrooveApi:
 
     #TO BE REMOVED ONCE UPDATE ADDED
     def queue_song(self, id):
-        self.api_radio_off()
         if self.__last_mode == "stopped" and len(self.__queue) == 0:
             self.play_song(id)
         else:
             self.__queue.append(id)
+
+        # API Flood control
+        # TODO: Fixme to not use a sleep
+        time.sleep(1)
+        self.api_radio_off()
 
     #TO BE REMOVED ONCE UPDATE ADDED
     def play_song(self, id):
