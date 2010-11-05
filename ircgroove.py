@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #    This file is part of GrooveBot.
 #
 #    GrooveBot is free software: you can redistribute it and/or modify
@@ -24,6 +25,7 @@ from JlewBot import JlewBotFactory
 api_inst = GrooveApi('/home/jlew/Documents/Grooveshark/currentSong.txt',
 '/home/jlew/.appdata/GroovesharkDesktop.7F9BF17D6D9CB2159C78A6A6AB076EA0B1E0497C.1/Local Store/shortcutAction.txt')
 
+BOT_NAME = "foss_groovebot"
 vol = 50
 last_msg = ""
 song_request_db = {}
@@ -102,6 +104,9 @@ def _err(err, responder):
     responder( "ERROR Occurred %s" % str(err) )
 
 def request_queue_song( responder, user, channel, command, msg):
+    if channel == BOT_NAME and not command in ['show', 'dump', 'status']:
+        responder("Let's talk to the class")
+        return
     global api_inst
     if command == "add":
         responder("Got Request, processing")
@@ -185,7 +190,7 @@ def set_vol():
 
 
 if __name__ == '__main__':
-    f = JlewBotFactory("#rit-groove", name="foss_groovebot")
+    f = JlewBotFactory("#rit-groove", name=BOT_NAME)
 
     for command in ['add','remove','show','pause','resume','skip','volup','voldown','vol','status','dump','radio_on','radio_off']:
         f.register_command(command, request_queue_song)
