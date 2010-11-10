@@ -94,7 +94,7 @@ class GrooveApi:
 
         # API Flood control
         # TODO: Fixme to not use a sleep
-        time.sleep(1)
+        sleep(1)
         self.api_radio_off()
 
     #TO BE REMOVED ONCE UPDATE ADDED
