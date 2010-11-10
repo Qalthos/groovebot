@@ -104,7 +104,7 @@ def _err(err, responder):
     responder( "ERROR Occurred %s" % str(err) )
 
 def request_queue_song( responder, user, channel, command, msg):
-    if channel == BOT_NAME and not command in ['show', 'dump', 'status']:
+    if channel == BOT_NAME and not command in ['show', 'dump', 'status', 'vol']:
         responder("Let's talk to the class")
         return
     global api_inst
