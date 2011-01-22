@@ -3,9 +3,12 @@ from twisted.internet.protocol import ClientFactory
 from twisted.words.protocols.irc import IRCClient
 
 
+CLIENT_NICK = "groove_client"
+CLIENT_NAME = "User Name"
+
 class GrooveClient(IRCClient):
-    versionName = "Alpha"
-    versionNum = "1"
+    versionName = "Beta"
+    versionNum = "2"
     sourceURL = "http://gitorious.com/~jlew"
 
     groovebot = "foss_groovebot"
@@ -18,14 +21,25 @@ class GrooveClient(IRCClient):
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        print "Joined %s" % channel
+        print("Joined %s" % channel)
+        #if groovebot in channel:
         self.whisper("vol")
         self.whisper("status")
         self.whisper("dump")
 
+    def userJoined(self, user, channel):
+        """Check to see if the groovebot joins."""
+        if user == self.groovebot:
+            self.factory.toggle(True)
+
     def left(self, channel):
         """This will get called when the bot leaves the channel."""
-        print "Left %s" % channel
+        print("Left %s" % channel)
+
+    def userLeft(self, user, channel):
+        """Check to see if the groovebot leaves."""
+        if user == self.groovebot:
+            self.factory.toggle(False)
 
     def privmsg(self, user, channel, msg):
         """This will get called when the bot receives a message."""
@@ -57,13 +71,13 @@ class GrooveClient(IRCClient):
 class GrooveClientFactory(ClientFactory):
     protocol = GrooveClient
 
-    def __init__(self, channel, name="groove_client", realname="Groove Client"):
+    def __init__(self, channel):
         self.channel = channel
         self.registered_commands = {}
         self.defualt_cmd_handler = self.__default_cmd
         self.now_playing = ""
-        IRCClient.nickname = name
-        IRCClient.realname = realname
+        IRCClient.nickname = CLIENT_NICK
+        IRCClient.realname = CLIENT_NAME
         self.active_bot = None
         self.gui = None
 
@@ -80,12 +94,15 @@ class GrooveClientFactory(ClientFactory):
         cb = self.registered_commands.get(msg, self.defualt_cmd_handler)
         cb(channel, msg)
 
+    def toggle(self, enable):
+        self.gui.toggle(enable)
+
     def clientConnectionLost(self, connector, reason):
         """If we get disconnected, reconnect to server."""
         connector.connect()
 
     def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
+        print("connection failed:", reason)
         reactor.stop()
 
     def __default_cmd(self, channel, msg):
@@ -98,7 +115,8 @@ class GrooveClientFactory(ClientFactory):
             return
 
         command = msg_parts[1]
-        ignored = ["Got", "Available", "Error", "Command", "API"]
+        ignored = ["Got", "Available", "Command", "API"]
+        errors = ["Error"]
 
         # This has the annoying habit of returning a second entry of an empty
         # string on empty queues.  If this happens, just return, we don't care
@@ -108,6 +126,7 @@ class GrooveClientFactory(ClientFactory):
         # Current song modifiers
         elif command == "stopped":
             self.gui.now_playing("")
+            self.gui.remove(text=msg_parts[2])
         elif command == "loading":
             # We can't rely on recieving a loading cue.
             pass
@@ -131,6 +150,9 @@ class GrooveClientFactory(ClientFactory):
             self.gui.remove(song_id=removed_id)
         # General responses we can ignore
         elif command.split()[0] in ignored:
+            pass
+        elif command.split()[0] in errors:
+            # Show an error message
             pass
         # More complex queue actions
         elif len(command.split()) > 1 and command.split()[1][:1] == "[":
