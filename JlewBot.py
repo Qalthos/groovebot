@@ -21,6 +21,7 @@ class JlewBot(IRCClient):
     versionName = "JlewBot"
     versionNum = "1"
     sourceURL = "http://gitorious.com/~jlew"
+    lineRate = 1
     #username
     #password
 
@@ -44,7 +45,7 @@ class JlewBot(IRCClient):
 
         # Check to see if they're sending me a private message
         if channel == self.nickname:
-            responder = lambda x: self.msg(user, x)
+            responder = lambda x: self.msg(user, x, length=400)
             msg = msg.split(" ", 1)
             if len(msg) == 1:
                 self.factory.handle_command(responder, user, channel, msg[0], "")
