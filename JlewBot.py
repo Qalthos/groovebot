@@ -12,7 +12,6 @@
 #    along with JlewBot.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
 from twisted.words.protocols.irc import IRCClient
 from twisted.internet.protocol import ClientFactory
 from twisted.internet import reactor
@@ -33,7 +32,7 @@ class JlewBot(IRCClient):
 
     def joined(self, channel):
         """This will get called when the bot joins the channel."""
-        print "Joinned %s" % channel
+        print "Joined %s" % channel
 
     def left(self, channel):
         """This will get called when the bot leaves the channel."""
@@ -73,7 +72,7 @@ class JlewBotFactory(ClientFactory):
     def __init__(self, channel, name="JlewBot", realname="JlewBot"):
         self.channel = channel
         self.registered_commands = {}
-        self.defualt_cmd_handler = self.__default_cmd
+        self.default_cmd_handler = self.__default_cmd
         IRCClient.nickname = name
         IRCClient.realname = realname
         active_bot = None
@@ -82,10 +81,10 @@ class JlewBotFactory(ClientFactory):
         self.active_bot = bot
 
     def register_command(self, key, func):
-            self.registered_commands[key] = func
+        self.registered_commands[key] = func
 
     def handle_command(self, responder, user, channel, command, msg):
-        cb = self.registered_commands.get(command, self.defualt_cmd_handler)
+        cb = self.registered_commands.get(command, self.default_cmd_handler)
         cb(responder, user, channel, command, msg)
 
     def __default_cmd(self, responder, user, channel, command, msg):

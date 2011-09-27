@@ -63,6 +63,19 @@
                 <property name="position">3</property>
               </packing>
             </child>
+            <child>
+              <object class="GtkButton" id="dump">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="image">reload_image</property>
+                <signal name="clicked" handler="action"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">4</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
@@ -70,11 +83,55 @@
           </packing>
         </child>
         <child>
-          <object class="GtkScrolledWindow" id="queue_scroll">
+          <object class="GtkHBox" id="mid_holder">
             <property name="visible">True</property>
-            <property name="can_focus">True</property>
-            <property name="hscrollbar_policy">automatic</property>
-            <property name="vscrollbar_policy">automatic</property>
+            <child>
+              <object class="GtkVBox" id="vol_box">
+                <property name="visible">True</property>
+                <property name="orientation">vertical</property>
+                <child>
+                  <object class="GtkButton" id="volup">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="image">volup_image</property>
+                    <signal name="clicked" handler="action"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="volume">
+                    <property name="visible">True</property>
+                    <property name="label" translatable="yes">??</property>
+                  </object>
+                  <packing>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="voldown">
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="image">voldown_image</property>
+                    <signal name="clicked" handler="action"/>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
             <child>
               <object class="GtkVBox" id="queue_box">
                 <property name="visible">True</property>
@@ -83,6 +140,9 @@
                   <placeholder/>
                 </child>
               </object>
+              <packing>
+                <property name="position">1</property>
+              </packing>
             </child>
           </object>
           <packing>
@@ -90,56 +150,17 @@
           </packing>
         </child>
         <child>
-          <object class="GtkHBox" id="vol_box">
+          <object class="GtkHBox" id="req_hbox">
             <property name="visible">True</property>
-            <child>
-              <object class="GtkButton" id="voldown">
-                <property name="label" translatable="yes">-</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="image">voldown_image</property>
-                <signal name="clicked" handler="action"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkLabel" id="volume">
-                <property name="visible">True</property>
-                <property name="label" translatable="yes">??</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="volup">
-                <property name="label" translatable="yes">+</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="image">volup_image</property>
-                <signal name="clicked" handler="action"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">2</property>
-              </packing>
-            </child>
             <child>
               <object class="GtkEntry" id="req_box">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <signal name="activate" handler="request"/>
               </object>
               <packing>
-                <property name="position">3</property>
+                <property name="position">0</property>
               </packing>
             </child>
             <child>
@@ -152,7 +173,7 @@
               </object>
               <packing>
                 <property name="expand">False</property>
-                <property name="position">4</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
@@ -188,12 +209,19 @@
   </object>
   <object class="GtkImage" id="volup_image">
     <property name="visible">True</property>
-    <property name="stock">audio-volume-high</property>
+    <property name="stock">gtk-zoom-in</property>
   </object>
   <object class="GtkImage" id="voldown_image">
     <property name="visible">True</property>
-    <property name="stock">audio-volume-low</property>
+    <property name="stock">gtk-zoom-out</property>
   </object>
-  <object class="GtkAction" id="action1"/>
-  <object class="GtkAction" id="action2"/>
+  <object class="GtkImage" id="unfavorite_image">
+    <property name="visible">True</property>
+    <property name="stock">gtk-cancel</property>
+  </object>
+  <object class="GtkImage" id="reload_image">
+    <property name="sensitive">False</property>
+    <property name="tooltip_text" translatable="yes">Radio mode is ON.</property>
+    <property name="stock">gtk-refresh</property>
+  </object>
 </interface>

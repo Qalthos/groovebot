@@ -20,10 +20,19 @@ class GrooveGui:
 
     def load_widgets_from_glade(self):
         widgets = ("volup", "volume", "voldown", "queue_box", "req_box",
-                   "resume", "pause", "now_playing", "main_window")
+                   "resume", "pause", "now_playing", "main_window", "skip")
         gw = self.builder.get_object
         for widget_name in widgets:
             setattr(self, "_%s" % widget_name, gw(widget_name))
+
+    def toggle(self, enable):
+        """Toggles the activity of widgets on the gui."""
+        # TODO: This should really be set from a collection.
+        self._volup.set_sensitive(enable)
+        self._voldown.set_sensitive(enable)
+        self._pause.set_sensitive(enable)
+        self._resume.set_sensitive(enable)
+        #self._request.set_sensitive(enable)
 
     def add(self, requester, song_id, text):
         # We want to ignore songs we've already seen, but they don't
@@ -36,17 +45,26 @@ class GrooveGui:
         self._queue_box.set_child_packing(song, 0, 1, 0, gtk.PACK_START)
         song.show()
         self.queue_keeper[song_id] = {"requester": requester, "label": song, "text": text}
+        self._skip.set_sensitive(True)
 
     def remove(self, song_id=None, text=None):
         if not song_id and text:
             song = self._queue_search(text)
-            if not song:
-                print "Couldn't remove %s %s" % (song_id, text)
-                return
         elif song_id:
             song = self.queue_keeper[song_id]
-        
-        self._queue_box.remove(song["label"])
+
+        if song and song["label"] in self._queue_box:
+            self._queue_box.remove(song["label"])
+
+        if len(self._queue_box.get_children()) == 0:
+            self._skip.set_sensitive(False)
+
+    def clear(self):
+        """Clears the queue."""
+
+        for song_id in self.queue_keeper:
+            song = self.queue_keeper[song_id]
+            self._queue_box.remove(song["label"])
 
     def volmod(self, new_vol):
         self._volume.set_text(new_vol)
@@ -59,7 +77,7 @@ class GrooveGui:
         if not song and text:
             song = self._queue_search(text)
             if not song:
-                self.add("someone", "???", text)
+                self.add("Radio", "???", text)
                 song = self.queue_keeper["???"]
         self._now_playing.set_text("Now Playing: %s\nRequested by %s" % (song["text"], song["requester"]))
 
@@ -92,7 +110,7 @@ class GrooveGui:
         gtk.main_quit()
 
     def _queue_search(self, text):
-        for stored_id, song in self.queue_keeper.items():
+        for song in self.queue_keeper.values():
             # Since the album is what generally gets lost, look for the front.
             if song["text"].startswith(text) or text.startswith(song["text"]):
                 return song
