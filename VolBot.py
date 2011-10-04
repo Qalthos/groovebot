@@ -34,8 +34,13 @@ class VolBot(JlewBot):
     def ok(self, msg, responder, extra=""):
         responder("OK %s" % extra)
 
-    def err(self, err, responder):
-        responder("ERROR Occurred %s" % str(err))
+    def err_chat(self, err, responder):
+        """This is for an error which will be shown to the user."""
+        responder("ERROR Occurred %r" % err)
+
+    def err_console(self, err):
+        """This is a quieter error that only prints to console."""
+        print "ERROR Occurrred %r" % err
 
     def volume_change(self, responder, user, channel, command, msg):
         if command == "vol":
@@ -45,13 +50,13 @@ class VolBot(JlewBot):
                 if msg == "up":
                     if self.vol < 100:
                         self.vol += self.vol_step
-                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err, responder)
+                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err_chat, responder)
                     else:
                         responder("Volume maxed.")
                 elif msg == "down":
                     if self.vol > 0:
                         self.vol -= self.vol_step
-                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err, responder)
+                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err_chat, responder)
                     else:
                         responder("Muted.")
 
