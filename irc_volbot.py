@@ -18,63 +18,55 @@
 from twisted.internet import reactor, threads, utils
 from twisted.internet.task import LoopingCall
 
-from JlewBot import JlewBotFactory
+from JlewBot import JlewBotFactory, JlewBot
 
-REPO = "https://gitorious.org/jlew/groovebot"
-BOT_NAME = "foss_volbot"
-CHAN_NAME = "#rit-groove"
-VOL_STEP = 5
-vol = 50
+class VolBot(JlewBot):
+    bot_name = "volbot_test"
+    channel = "#rit-groove"
+    vol_step = 5
+    vol = 50
 
+    def setup(self, f):
+        f.register_command('vol', self.volume_change)
+        f.register_command('source', self.simple_response)
+        reactor.callWhenRunning(self._set_vol)
 
-def ok(msg, responder, extra=""):
-    responder("OK %s" % extra)
+    def ok(self, msg, responder, extra=""):
+        responder("OK %s" % extra)
 
+    def err(self, err, responder):
+        responder("ERROR Occurred %s" % str(err))
 
-def err(err, responder):
-    responder("ERROR Occurred %s" % str(err))
+    def volume_change(self, responder, user, channel, command, msg):
+        if command == "vol":
+            if not msg:
+                responder(self.vol)
+            else:
+                if msg == "up":
+                    if self.vol < 100:
+                        self.vol += self.vol_step
+                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err, responder)
+                    else:
+                        responder("Volume maxed.")
+                elif msg == "down":
+                    if self.vol > 0:
+                        self.vol -= self.vol_step
+                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err, responder)
+                    else:
+                        responder("Muted.")
 
+    def simple_response(self, responder, user, channel, command, msg):
+        """ This is a method that just responds with simple strings."""
+        if command == "source":
+            responder(self.sourceURL)
 
-def volume_change(responder, user, channel, command, msg):
-    global vol
-
-    if command == "vol":
-        if not msg:
-            responder(vol)
-        else:
-            if msg == "up":
-                if vol < 100:
-                    vol += VOL_STEP
-                    _set_vol().addCallback(ok, responder, str(vol)).addErrback(err, responder)
-                else:
-                    responder("Volume maxed.")
-            elif msg == "down":
-                if vol > 0:
-                    vol -= VOL_STEP
-                    _set_vol().addCallback(ok, responder, str(vol)).addErrback(err, responder)
-                else:
-                    responder("Muted.")
-
-
-def simple_response(responder, user, channel, command, msg):
-    """ This is a method that just responds with simple strings."""
-    if command == "source":
-        responder(REPO)
-
-def _set_vol():
-    return utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' % vol])
-
-
-def setup(f):
-    f.register_command('vol', volume_change)
-    f.register_command('source', simple_response)
-    reactor.callWhenRunning(_set_vol)
+    def _set_vol(self):
+        return utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' % self.vol])
 
 
 if __name__ == '__main__':
-    f = JlewBotFactory(CHAN_NAME, name=BOT_NAME)
-
-    setup(f)
-
+    bot = VolBot()
+    f = JlewBotFactory(protocol=VolBot)
+    bot.setup(f)
     reactor.connectTCP("irc.freenode.net", 6667, f)
     reactor.run()
