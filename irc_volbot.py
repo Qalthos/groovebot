@@ -20,6 +20,7 @@ from twisted.internet.task import LoopingCall
 
 from JlewBot import JlewBotFactory
 
+REPO = "https://gitorious.org/jlew/groovebot"
 BOT_NAME = "foss_volbot"
 CHAN_NAME = "#rit-groove"
 VOL_STEP = 5
@@ -55,12 +56,18 @@ def volume_change(responder, user, channel, command, msg):
                     responder("Muted.")
 
 
+def simple_response(responder, user, channel, command, msg):
+    """ This is a method that just responds with simple strings."""
+    if command = "source":
+        responder(REPO)
+
 def _set_vol():
     return utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' % vol])
 
 
 def setup(f):
     f.register_command('vol', volume_change)
+    f.register_command('source', simple_response)
     reactor.callWhenRunning(_set_vol)
 
 
