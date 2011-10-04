@@ -58,7 +58,7 @@ def volume_change(responder, user, channel, command, msg):
 
 def simple_response(responder, user, channel, command, msg):
     """ This is a method that just responds with simple strings."""
-    if command = "source":
+    if command == "source":
         responder(REPO)
 
 def _set_vol():
