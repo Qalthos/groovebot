@@ -21,8 +21,10 @@ from twisted.internet.task import LoopingCall
 from JlewBot import JlewBotFactory, JlewBot
 
 class VolBot(JlewBot):
-    bot_name = "volbot_test"
+    bot_name = "foss_volbot"
     channel = "#rit-groove"
+    version_num = 1.3
+    source_URL = "https://gitorious.org/jlew/groovebot"
     vol_step = 5
     vol = 50
 
