@@ -19,9 +19,9 @@ from twisted.internet import reactor
 class JlewBot(IRCClient):
     bot_name = "JlewBot"
     channel = "#jlew-test"
-    version_num = 1
-    source_URL = "http://gitorious.com/~jlew"
-    line_rate = 1
+    versionNum = 1
+    sourceURL = "http://gitorious.com/~jlew"
+    lineRate = 1
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""

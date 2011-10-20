@@ -23,8 +23,8 @@ from JlewBot import JlewBotFactory, JlewBot
 class VolBot(JlewBot):
     bot_name = "foss_volbot"
     channel = "#rit-groove"
-    version_num = 1.3
-    source_URL = "https://gitorious.org/jlew/groovebot"
+    versionNum = 1.3
+    sourceURL = "https://gitorious.org/jlew/groovebot"
     vol_step = 5
     vol = 50
 
@@ -39,10 +39,12 @@ class VolBot(JlewBot):
     def err_chat(self, err, responder):
         """This is for an error which will be shown to the user."""
         responder("ERROR Occurred %r" % err)
+        err.printTraceback()
 
     def err_console(self, err):
         """This is a quieter error that only prints to console."""
         print "ERROR Occurrred %r" % err
+        err.printTraceback()
 
     def volume_change(self, responder, user, channel, command, msg):
         if command == "vol":
