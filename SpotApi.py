@@ -47,7 +47,7 @@ class SpotApi:
 
     def request_song_from_api(self, search):
         search_result = self.__api.search(search, 1)
-        result = dict()
+        result = None
         if not search_result.total_tracks == 0:
             track = search_result.playlist.tracks[0]
             result = dict(SongID=track.get_uri(), SongName=track.title,
