@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
+from getpass import getpass
 import sys
 import unicodedata
 
