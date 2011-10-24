@@ -36,7 +36,10 @@ class SpotApi:
 
     @property
     def current_song(self):
-        return self.__song_db[self.__api.current_track.get_uri()]
+        track = self.__api.current_track
+        if track:
+            return self.__song_db[track.get_uri()]
+        return dict()
 
     @property
     def song_db(self):
