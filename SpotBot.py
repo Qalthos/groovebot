@@ -53,7 +53,7 @@ class SpotBot(VolBot):
             self.api_inst.api_next()
             song = self.api_inst.current_song
             if song:
-                self.describe(self.channel, 'Playing "%s" by "%s"' % (song['SongName'], song['ArtistName'])
+                self.describe(self.channel, 'Playing "%s" by "%s"' % (song['SongName'], song['ArtistName']))
 
     def check_status(self):
         threads.deferToThread(self._playback_status).addErrback(self.err_console)
