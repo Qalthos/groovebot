@@ -48,18 +48,17 @@ class SpotBot(VolBot):
             d = unicodedata.normalize('NFKD', data).encode('ascii','ignore')
         return d
 
-    # I still don't know what this does for GrooveBot
-    def _file_status(self, s, bot, channel):
-        if s:
-            msg = "%s: \"%s\" by \"%s\" on \"%s\"" % \
-                    (self.convert_to_ascii(s['status']),
-                     self.convert_to_ascii(s['title']),
-                     self.convert_to_ascii(s['artist']),
-                     self.convert_to_ascii(s['album']))
+    def check_status(self, irc_bot, channel):
+        if hasattr(irc_bot, 'active_bot') and irc_bot.active_bot:
+            irc_bot = irc_bot.active_bot
+        else:
+            return
 
-            if s['status'] == 'stopped':
-                threads.deferToThread(self.api_inst.auto_play).addErrback(self.err_console)
-            bot.me(channel, msg)
+        if not self.api_inst.current_song:
+            self.api_inst.api_next()
+            song = self.api_inst.current_song
+            if song:
+                print song
 
     def _add_lookup_cb(self, song_packet, responder, user):
         if not song_packet:
@@ -137,4 +136,5 @@ if __name__ == '__main__':
     f = JlewBotFactory(protocol=SpotBot)
     bot.setup(f, sys.argv[1], sys.argv[2])
     reactor.connectTCP("irc.freenode.net", 6667, f)
+    lc = LoopingCall(check_status).start(2)
     reactor.run()
