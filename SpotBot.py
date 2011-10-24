@@ -77,7 +77,7 @@ class SpotBot(VolBot):
                 self.convert_to_ascii(song_packet['AlbumName'])
                 ))
             self.song_request_db[song_packet['SongID']] = user
-            self.api_inst.queue_song(song_packet['SongID'])
+            threads.deferToThread(self.api_inst.queue_song, song_packet['SongID']).addErrback(self.err_chat, responder)
 
     def request_queue_song(self, responder, user, channel, command, msg):
         if channel == self.bot_name and not command in ['show', 'dump', 'status', 'vol']:
