@@ -37,7 +37,7 @@ class SpotBot(VolBot):
         reactor.callWhenRunning(self._set_vol)
         # ^ super?
 
-        for command in ['add','remove','show','pause','resume','skip','status','dump','radio']:
+        for command in ['add','remove', 'oops','show','pause','resume','skip','status','dump','radio']:
             f.register_command(command, self.request_queue_song)
         self.api_inst = SpotApi(uname, upass)
 
@@ -92,6 +92,15 @@ class SpotBot(VolBot):
                 responder('Removed %s' % msg)
             else:
                 responder('Could not remove %s' % msg)
+
+        elif command == "oops":
+            for id in self.api_inst.queue:
+                if user == self.song_request_db[id]:
+                    self.api_inst.remove_queue(msg)
+                    responder('Removed %s' % id)
+                    break
+            else:
+                responder('There was nothing to remove')
 
         elif command == "show":
             songNames = []
