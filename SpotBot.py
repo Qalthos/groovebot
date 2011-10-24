@@ -149,5 +149,5 @@ if __name__ == '__main__':
     f = JlewBotFactory(protocol=SpotBot)
     bot.setup(f, sys.argv[1], sys.argv[2])
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    lc = LoopingCall(check_status).start(2)
+    lc = LoopingCall(check_status, bot, bot.channel).start(2)
     reactor.run()
