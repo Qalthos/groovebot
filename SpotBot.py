@@ -135,7 +135,10 @@ class SpotBot(VolBot):
 
         elif command == "status":
             song = self.api_inst.current_song
-            responder('"%s" by "%s"' %(self.convert_to_ascii(song['SongName']), self.convert_to_ascii(song['ArtistName'])))
+            if song:
+                responder('"%s" by "%s"' %(self.convert_to_ascii(song['SongName']), self.convert_to_ascii(song['ArtistName'])))
+            else:
+                responder("No song playing.")
 
 
 if __name__ == '__main__':
