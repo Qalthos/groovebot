@@ -48,17 +48,15 @@ class SpotBot(VolBot):
             d = unicodedata.normalize('NFKD', data).encode('ascii','ignore')
         return d
 
-    def check_status(self, irc_bot, channel):
-        if hasattr(irc_bot, 'active_bot') and irc_bot.active_bot:
-            irc_bot = irc_bot.active_bot
-        else:
-            return
-
-        if not self.api_inst.current_song:
+    def _playback_status(self):
+        if not self.api_inst.current_song and not len(self.api_inst.queue) == 0:
             self.api_inst.api_next()
             song = self.api_inst.current_song
             if song:
-                print song
+                self.describe(self.channel, 'Playing "%s" by "%s"' % (song['SongName'], song['ArtistName'])
+
+    def check_status(self):
+        threads.deferToThread(self._playback_status).addErrback(self.err_console)
 
     def _add_lookup_cb(self, song_packet, responder, user):
         if not song_packet:
@@ -147,7 +145,7 @@ if __name__ == '__main__':
         sys.exit()
     bot = SpotBot()
     f = JlewBotFactory(protocol=SpotBot)
-    bot.setup(f, sys.argv[1], sys.argv[2])
+    bot.setup(f, sys.argv[1], upass)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    lc = LoopingCall(bot.check_status, bot, bot.channel).start(2)
+    lc = LoopingCall(bot.check_status).start(2)
     reactor.run()
