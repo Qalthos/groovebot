@@ -31,14 +31,18 @@ class VolBot(JlewBot):
     volume_scale = 'logarithmic'
     vol_step = 5
     vol = 50
+    locked = False
 
     def setup(self, f):
         f.register_command('vol', self.volume_change)
         f.register_command('source', self.simple_response)
+        f.register_command('lock', self.lock_bot, 'op')
         reactor.callWhenRunning(self._set_vol)
 
     def volume_change(self, responder, user, channel, command, msg):
-        if command == "vol":
+        if self.locked:
+            responder('Bot is currently locked.')
+        elif command == "vol":
             if not msg:
                 responder(self.vol)
             else:
@@ -59,6 +63,21 @@ class VolBot(JlewBot):
         """ This is a method that just responds with simple strings."""
         if command == "source":
             responder(self.sourceURL)
+
+    def lock_bot(self, responder, user, channel, command, msg):
+        if command == 'lock':
+            if msg == 'on' and not self.locked:
+                self.vol = 0
+                self.locked = True
+                responder('Bot is locked.')
+            elif msg == 'off' and self.locked:
+                self.vol = 50
+                self.locked = False
+                responder('Bot is unlocked.')
+            else:
+                responder('Bot is already %slocked.' % ('' if self.locked else 'un'))
+            self._set_vol()
+
 
     def _set_vol(self):
         volume = self.vol
