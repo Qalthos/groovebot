@@ -82,8 +82,11 @@ class JlewBotFactory(ReconnectingClientFactory):
             self.users.set_group(command, group)
 
     def handle_command(self, responder, user, channel, command, msg):
-        cb = self.registered_commands.get(command, self.default_cmd_handler)
-        cb(responder, user, channel, command, msg)
+        if self.users.has_perms(user, command):
+            cb = self.registered_commands.get(command, self.default_cmd_handler)
+            cb(responder, user, channel, command, msg)
+        else:
+            responder('You do not have permission to use that command.')
 
     def __default_cmd(self, responder, user, channel, command, msg):
         if command == "help":
