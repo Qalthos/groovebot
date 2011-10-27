@@ -16,6 +16,8 @@ from twisted.words.protocols.irc import IRCClient
 from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet import reactor
 
+import user
+
 class JlewBot(IRCClient):
     bot_name = "JlewBot"
     channel = "#jlew-test"
@@ -67,14 +69,17 @@ class JlewBotFactory(ReconnectingClientFactory):
         self.channel = protocol.channel
         self.registered_commands = {}
         self.default_cmd_handler = self.__default_cmd
+        self.users = user.UserHandler()
         IRCClient.nickname = protocol.bot_name
         IRCClient.realname = protocol.bot_name
 
     def add_bot(self, bot):
         self.active_bot = bot
 
-    def register_command(self, key, func):
-        self.registered_commands[key] = func
+    def register_command(self, command, handler, group=None):
+        self.registered_commands[command] = handler
+        if group:
+            self.users.set_group(command, group)
 
     def handle_command(self, responder, user, channel, command, msg):
         cb = self.registered_commands.get(command, self.default_cmd_handler)
