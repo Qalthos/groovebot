@@ -90,7 +90,7 @@ class JlewBotFactory(ReconnectingClientFactory):
             cb(responder, user, channel, command, msg)
         else:
             responder('You do not have permission to use that command.')
- 
+
     def user_mod(self, responder, user, channel, command, msg):
         if command == 'op':
             self.users.set_perms(msg, 'op')
@@ -101,6 +101,11 @@ class JlewBotFactory(ReconnectingClientFactory):
     def __default_cmd(self, responder, user, channel, command, msg):
         if command == "help":
             responder("Available Commands: %s" % ', '.join(self.registered_commands.keys()))
+            commands = command
+            for cmd in self.registered_commands.keys():
+                if self.users.has_perms(user, cmd):
+                    commands = '%s, %s' % (commands, cmd)
+            responder("Available Commands: %s" % commands)
 
         else:
             responder("Command not recognized")
