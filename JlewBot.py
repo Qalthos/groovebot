@@ -72,6 +72,9 @@ class JlewBotFactory(ReconnectingClientFactory):
         self.users = user.UserHandler()
         IRCClient.nickname = protocol.bot_name
         IRCClient.realname = protocol.bot_name
+        active_bot = None
+        self.register_command('op', self.user_mod, 'op')
+        self.register_command('deop', self.user_mod, 'op')
 
     def add_bot(self, bot):
         self.active_bot = bot
@@ -87,6 +90,13 @@ class JlewBotFactory(ReconnectingClientFactory):
             cb(responder, user, channel, command, msg)
         else:
             responder('You do not have permission to use that command.')
+ 
+    def user_mod(self, responder, user, channel, command, msg):
+        if command == 'op':
+            self.users.set_perms(msg, 'op')
+        if command == 'deop':
+            self.users.set_perms(msg, None)
+        responder('%s is now %s' % (msg, self.users.get_perms(msg)))
 
     def __default_cmd(self, responder, user, channel, command, msg):
         if command == "help":
