@@ -13,17 +13,15 @@
 
 
 from twisted.words.protocols.irc import IRCClient
-from twisted.internet.protocol import ClientFactory
+from twisted.internet.protocol import ReconnectingClientFactory
 from twisted.internet import reactor
 
 class JlewBot(IRCClient):
-    versionName = "JlewBot"
-    versionNum = "1"
+    bot_name = "JlewBot"
+    channel = "#jlew-test"
+    versionNum = 1
     sourceURL = "http://gitorious.com/~jlew"
     lineRate = 1
-    #username
-    #password
-
 
     def signedOn(self):
         """Called when bot has succesfully signed on to server."""
@@ -66,15 +64,16 @@ class JlewBot(IRCClient):
         # Must not reply
         return
 
-class JlewBotFactory(ClientFactory):
+class JlewBotFactory(ReconnectingClientFactory):
     protocol = JlewBot
 
-    def __init__(self, channel, name="JlewBot", realname="JlewBot"):
-        self.channel = channel
+    def __init__(self, protocol=protocol):
+        self.protocol = protocol
+        self.channel = protocol.channel
         self.registered_commands = {}
         self.default_cmd_handler = self.__default_cmd
-        IRCClient.nickname = name
-        IRCClient.realname = realname
+        IRCClient.nickname = protocol.bot_name
+        IRCClient.realname = protocol.bot_name
         active_bot = None
 
     def add_bot(self, bot):
@@ -96,15 +95,6 @@ class JlewBotFactory(ClientFactory):
 
         else:
             responder("Command not recoginized")
-
-
-    def clientConnectionLost(self, connector, reason):
-        """If we get disconnected, reconnect to server."""
-        connector.connect()
-
-    def clientConnectionFailed(self, connector, reason):
-        print "connection failed:", reason
-        reactor.stop()
 
 
 if __name__ == '__main__':
