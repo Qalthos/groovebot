@@ -110,7 +110,7 @@ class MPDApi:
         If no songs are in the queue, it does nothing
         """
         if self.__state() == 'pause':
-            self.api.play()
+            self.__api.play()
         else:
             self.auto_play()
 
