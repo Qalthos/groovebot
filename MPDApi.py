@@ -91,6 +91,7 @@ class MPDApi:
             try:
                 result[key] = util.asciify(song_dict[tag])
             except:
+                # This song does not have that key.  Probably a .wav
                 pass
         return result
 
