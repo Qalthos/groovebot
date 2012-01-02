@@ -29,6 +29,12 @@ class MPDApi:
         self.__api.connect(host, port)
 
         self.__song_db = {}
+        # If there are songs in the MPD queue, rebuild their info.
+        for file_ in self.__api.playlist():
+            file_ = file_[6:]
+            song = self.playlist_find(file_)
+            song_dict = self.translate_song(song)
+            self.__song_db[file_] = song_dict
 
     @property
     def queue(self):
