@@ -58,11 +58,6 @@ class JlewBot(IRCClient):
             elif len(msg) == 3:
                 self.factory.handle_command(responder, user, channel, msg[1], msg[2])
 
-    def noticed(self, user, channel, message):
-        """Called when a notice from user or channel"""
-
-        # Must not reply
-        return
 
 class JlewBotFactory(ReconnectingClientFactory):
     protocol = JlewBot
