@@ -95,8 +95,9 @@ class MPDBot(VolBot):
             song_db = self.api_inst.song_db
             for id in self.api_inst.queue:
                 responder('%s [%s]: "%s" by "%s" on "%s"' % ( id,
-                    self.song_request_db[id], song_db[id]['SongName'],
-                    song_db[id]['ArtistName'], song_db[id]['AlbumName']))
+                    self.song_request_db.get(id, 'radio'),
+                    song_db[id]['SongName'], song_db[id]['ArtistName'],
+                    song_db[id]['AlbumName']))
 
         elif command == "pause":
             threads.deferToThread(self.api_inst.api_pause).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
