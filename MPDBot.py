@@ -30,12 +30,8 @@ class MPDBot(VolBot):
     current_song = None
 
     def setup(self, f):
-        #super(SpotBot, self).setup(f)
-        f.register_command('vol', self.volume_change)
-        f.register_command('source', self.simple_response)
-        f.register_command('lock', self.lock_bot, 'op')
-        #reactor.callWhenRunning(self._set_vol)
-        # ^ super?
+        # super() for classic classes:
+        VolBot.setup(self, f)
 
         for command in ['add','remove','show','pause','resume','skip','status','dump', 'oops']:
             f.register_command(command, self.request_queue_song)
