@@ -56,18 +56,11 @@ class MPDApi:
         return self.__api.status()['state']
 
     def request_song_from_api(self, search):
-        search_result = self.__api.search('title', search)[0]
+        search_result = self.__api.search('title', search)
         result = None
         if search_result:
-            result = dict(SongID=search_result['file'])
-            for key, tag in dict(SongName='title', ArtistName='artist',
-                    AlbumName='album').items():
-                try:
-                    value = util.asciify(search_result[tag])
-                    result[key] = value
-                except:
-                    pass
-            self.__song_db[search_result['file']] = result
+            result = self.translate_song(search_result[0])
+            self.__song_db[result['SongID']] = result
         return result
 
     def queue_song(self, file_):
@@ -91,6 +84,16 @@ class MPDApi:
             return True
         except:
             return False
+
+    def translate_song(self, song_dict):
+        result = dict(SongID=song_dict['file'])
+        for key, tag in dict(SongName='title', ArtistName='artist',
+                AlbumName='album').items():
+            try:
+                result[key] = util.asciify(song_dict[tag])
+            except:
+                pass
+        return result
 
     ###### API CALLS #######
     def api_pause(self):
