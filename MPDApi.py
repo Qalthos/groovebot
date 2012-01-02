@@ -78,12 +78,11 @@ class MPDApi:
                     break
 
     def remove_queue(self, file_):
-        try:
-            pos = self.__api.playlistfind('file', file_)['pos']
-            self.__api.delete(pos)
+        song = self.playlist_find(file_)
+        if song:
+            self.__api.delete(song['pos'])
             return True
-        except:
-            return False
+        return False
 
     def translate_song(self, song_dict):
         result = dict(SongID=song_dict['file'])
@@ -94,6 +93,12 @@ class MPDApi:
             except:
                 pass
         return result
+
+    def playlist_find(self, filename):
+        song = self.__api.playlistfind('file', filename)
+        if song:
+            return song[0]
+        return None
 
     ###### API CALLS #######
     def api_pause(self):
