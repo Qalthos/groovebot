@@ -35,11 +35,11 @@ class MPDApi:
 
     @property
     def queue(self):
-        current_pos = -1
+        queue = []
         if self.__api.currentsong():
             current_pos = int(self.__api.currentsong()['pos'])
-        queue = self.__api.playlist()[current_pos:]
-        return map(lambda x: x[6:], queue[:-1])
+            queue = self.__api.playlist()[current_pos:]
+        return map(lambda x: x[6:], queue)
 
     @property
     def current_song(self):

@@ -40,8 +40,9 @@ class MPDBot(VolBot):
     def _playback_status(self):
         if not self.current_song == self.api_inst.current_song:
             self.current_song = self.api_inst.current_song
-            self.describe(self.channel, 'Playing "%s" by "%s"' % \
-                (self.current_song['SongName'], self.current_song['ArtistName']))
+            if self.current_song:
+                self.describe(self.channel, 'Playing "%s" by "%s"' % \
+                    (self.current_song['SongName'], self.current_song['ArtistName']))
 
     def check_status(self):
         threads.deferToThread(self._playback_status).addErrback(util.err_console)
