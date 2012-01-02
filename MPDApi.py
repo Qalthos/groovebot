@@ -48,10 +48,7 @@ class MPDApi:
     def current_song(self):
         track = self.__api.currentsong()
         if track:
-            try:
-                return track['title']
-            except KeyError:
-                return track['file']
+            return self.song_db.get(track['file'])
         return None
 
     @property
