@@ -75,21 +75,16 @@ class MPDApi:
 
     def queue_song(self, file_):
         if self.__state == 'stop' and len(self.queue) == 0:
-            self.play_song(file_)
+            self.__api.playid(self.playlist_find(file_)['id'])
         else:
             self.__api.add(file_)
-
-    def play_song(self, file_):
-        self.__api.add(file_)
-        if self.__state() == 'stop':
-            self.__api.playid(self.__api.playlistfind(file_)['id'])
 
     def auto_play(self):
         if self.__state() == 'stop' and not len(self.queue) == 0:
             while True:
                 random_song = 'file: %s' % choice(self.__api.list('file'))
                 if random_song not in self.__api.playlist():
-                    self.play_song(random_song)
+                    self.queue_song(random_song)
                     break
 
     def remove_queue(self, file_):
