@@ -96,7 +96,9 @@ class PandApi:
     def translate_song(self, song):
         return dict(SongName=util.asciify(song.title),
                     ArtistName=util.asciify(song.artist),
-                    AlbumName=util.asciify(song.album))
+                    AlbumName=util.asciify(song.album),
+                    Rating=':)' if song.rating==RATE_LOVE else \
+                           ':(' if song.rating==RATE_BAN else ':|')
 
     ###### API CALLS #######
     def api_pause(self):

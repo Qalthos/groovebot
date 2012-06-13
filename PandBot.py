@@ -76,7 +76,7 @@ class PandBot(VolBot):
         elif command == "status":
             song = self.api_inst.current_song
             if song:
-                responder('"%s" by %s' % (song['SongName'], song['ArtistName']))
+                responder('"%s" by %s %s' % (song['SongName'], song['ArtistName'], song['Rating']))
             else:
                 responder("No song playing.")
 
