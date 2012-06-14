@@ -88,10 +88,10 @@ class PandBot(VolBot):
             vote = self.api_inst.api_radio_get_vote()
             if not vote:
                 responder('Current song has not been voted on')
-            else
+            else:
                 if vote == 'love':
                     vote = 'up'
-                elif vote == 'ban'
+                elif vote == 'ban':
                     vote = 'down'
                 responder('Current song has been voted %s' % vote)
 
