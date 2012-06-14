@@ -85,6 +85,9 @@ class PandApi:
         self.__last_mode = 'playing'
 
     def auto_play(self):
+        bus = self.__player.get_bus()
+        while bus.have_pending():
+            self.on_message(bus, bus.pop())
         if self.__last_mode == 'stopped':
             song = self.__queue.pop(0)
             self.play_song(song.audioUrl)
