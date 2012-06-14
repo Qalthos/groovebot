@@ -39,11 +39,10 @@ class PandBot(VolBot):
         self.api_inst = PandApi(uname, upass, station)
 
     def _playback_status(self):
-        if not self.api_inst.current_song and not len(self.api_inst.queue) == 0:
-            self.api_inst.api_next()
-            song = self.api_inst.current_song
-            if song:
-                self.describe(self.channel, 'Playing "%s" by "%s"' % (song['SongName'], song['ArtistName']))
+        self.api_inst.auto_play()
+        song = self.api_inst.current_song
+        #if song:
+        #    self.describe(self.channel, 'Playing "%s" by "%s"' % (song['SongName'], song['ArtistName']))
 
     def check_status(self):
         threads.deferToThread(self._playback_status).addErrback(util.err_console)
