@@ -89,7 +89,7 @@ class JlewBotFactory(ReconnectingClientFactory):
             responder("To view a list of available commands type \"list\".")
 
         else:
-            responder("Command not recoginized")
+            responder("Command not recognized")
 
 
 if __name__ == '__main__':

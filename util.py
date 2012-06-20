@@ -21,8 +21,11 @@ def asciify(data):
         d = unicodedata.normalize('NFKD', data).encode('ascii','ignore')
     return d
 
+
 def ok(msg, responder, extra=""):
+    """Sends a generic OK response to responder with optional data."""
     responder("OK %s" % extra)
+
 
 def err_chat(err, responder):
     """This is for an error which will be shown to the user."""

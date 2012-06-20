@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #    This file is part of GrooveBot.
 #
 #    GrooveBot is free software: you can redistribute it and/or modify
@@ -19,6 +19,7 @@ from twisted.internet import reactor, threads, utils
 from twisted.internet.task import LoopingCall
 
 from JlewBot import JlewBotFactory, JlewBot
+import util
 
 class VolBot(JlewBot):
     bot_name = "foss_volbot"
@@ -33,19 +34,6 @@ class VolBot(JlewBot):
         f.register_command('source', self.simple_response)
         reactor.callWhenRunning(self._set_vol)
 
-    def ok(self, msg, responder, extra=""):
-        responder("OK %s" % extra)
-
-    def err_chat(self, err, responder):
-        """This is for an error which will be shown to the user."""
-        responder("ERROR Occurred %r" % err)
-        err.printTraceback()
-
-    def err_console(self, err):
-        """This is a quieter error that only prints to console."""
-        print "ERROR Occurrred %r" % err
-        err.printTraceback()
-
     def volume_change(self, responder, user, channel, command, msg):
         if command == "vol":
             if not msg:
@@ -54,13 +42,13 @@ class VolBot(JlewBot):
                 if msg == "up":
                     if self.vol < 100:
                         self.vol += self.vol_step
-                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err_chat, responder)
+                        self._set_vol().addCallback(util.ok, responder, str(self.vol)).addErrback(util.err_chat, responder)
                     else:
                         responder("Volume maxed.")
                 elif msg == "down":
                     if self.vol > 0:
                         self.vol -= self.vol_step
-                        self._set_vol().addCallback(self.ok, responder, str(self.vol)).addErrback(self.err_chat, responder)
+                        self._set_vol().addCallback(util.ok, responder, str(self.vol)).addErrback(util.err_chat, responder)
                     else:
                         responder("Muted.")
 
