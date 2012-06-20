@@ -32,6 +32,7 @@ VOTE = ['vote']
 
 
 class MergeBot(VolBot):
+    bot_name = 'foss_groovebot'
     song_request_db = {}
     current_song = None
 
@@ -58,10 +59,10 @@ class MergeBot(VolBot):
             responder("No songs found.")
 
         elif song_packet['SongID'] in self.api_inst.queue:
-            responder('"%s" by "%s" is already in queue' % (\
+            responder('"%s" by %s is already in queue' % (\
                 song_packet['SongName'], song_packet['ArtistName']))
         else:
-            responder('Queueing %s: "%s" by "%s" on "%s"' % (\
+            responder('Queueing %s: "%s" by %s on %s' % (\
                 song_packet['SongID'], song_packet['SongName'],
                 song_packet['ArtistName'], song_packet['AlbumName']))
             self.song_request_db[song_packet['SongID']] = user
@@ -96,7 +97,7 @@ class MergeBot(VolBot):
             songNames = []
             song_db = self.api_inst.song_db
             for song in self.api_inst.queue:
-                songNames.append('"%s" by "%s"' % (song_db[song]['SongName'], song_db[song]['ArtistName']))
+                songNames.append('"%s" by %s' % (song_db[song]['SongName'], song_db[song]['ArtistName']))
             responder(', '.join(songNames))
 
         elif command == "dump":
@@ -118,7 +119,7 @@ class MergeBot(VolBot):
         elif command == "status":
             song = self.api_inst.current_song
             if song:
-                responder('"%s" by "%s"' % (song['SongName'], song['ArtistName']))
+                responder('"%s" by %s' % (song['SongName'], song['ArtistName']))
             else:
                 responder("No song playing.")
 
@@ -144,7 +145,6 @@ if __name__ == '__main__':
 
     if sys.argv[1] == 'mpd':
         bot = MergeBot()
-        bot.bot_name = 'foss_mpdbot'
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
@@ -153,7 +153,6 @@ if __name__ == '__main__':
 
     elif sys.argv[1] == 'pandora':
         bot = MergeBot()
-        bot.bot_name = 'foss_pandbot'
         bot.capabilities = QUEUE + PLAYBACK + VOTE
         bot.quiet = QUEUE
 
