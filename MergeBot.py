@@ -28,7 +28,6 @@ import util
 CONTROL = ['add', 'remove', 'oops']
 PLAYBACK = ['pause', 'resume', 'skip']
 QUEUE = ['show', 'dump', 'status']
-VOLUME = ['vol']
 VOTE = ['vote']
 
 
@@ -146,7 +145,7 @@ if __name__ == '__main__':
     if sys.argv[1] == 'mpd':
         bot = MergeBot()
         bot.bot_name = 'foss_mpdbot'
-        bot.capabilities = QUEUE + VOLUME + PLAYBACK + CONTROL
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
         from MPDApi import MPDApi
@@ -155,7 +154,7 @@ if __name__ == '__main__':
     elif sys.argv[1] == 'pandora':
         bot = MergeBot()
         bot.bot_name = 'foss_pandbot'
-        bot.capabilities = QUEUE + VOLUME + PLAYBACK + VOTE
+        bot.capabilities = QUEUE + PLAYBACK + VOTE
         bot.quiet = QUEUE
 
         from PandApi import PandApi
