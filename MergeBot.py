@@ -47,9 +47,9 @@ class MergeBot(VolBot):
     def _playback_status(self):
         self.api_inst.auto_play()
         song = self.api_inst.current_song
-        if song:
-            self.describe(self.channel, 'Playing "%s" by "%s"' % \
-                    (song['SongName'], song['ArtistName']))
+        #if song:
+        #    self.describe(self.channel, 'Playing "%s" by %s' % \
+        #            (song['SongName'], song['ArtistName']))
 
     def check_status(self):
         threads.deferToThread(self._playback_status).addErrback(util.err_console)
