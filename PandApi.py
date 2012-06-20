@@ -71,14 +71,14 @@ class PandApi:
     @property
     def song_db(self):
         db = dict()
-        for index, song in self.__queue:
+        for index, song in enumerate(self.__queue):
             db[index] = self.translate_song(song)
         return db
 
     @property
     def queue(self):
         # Song IDs are nonexistant, so we use indices here.
-        return range(len(queue))
+        return range(len(self.__queue))
 
     @property
     def current_song(self):
