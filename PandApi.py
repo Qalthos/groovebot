@@ -67,11 +67,16 @@ class PandApi:
         self.__last_mode = 'stopped'
 
     @property
+    def song_db(self):
+        db = dict()
+        for index, song in self.__queue:
+            db[index] = self.translate_song(song)
+        return db
+
+    @property
     def queue(self):
-        queue = []
-        for song in self.__queue:
-            queue.append(self.translate_song(song))
-        return queue
+        # Song IDs are nonexistant, so we use indices here.
+        return range(len(queue))
 
     @property
     def current_song(self):
