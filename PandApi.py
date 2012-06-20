@@ -50,15 +50,17 @@ class PandApi:
         bus.connect("message", self.on_message)
 
     def on_message(self, bus, message):
-        print("on_message Called")
         t = message.type
         if t == gst.MESSAGE_EOS:
             print("End of song")
         elif t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
             print "Error: %s" % err, debug
+        elif t in [gst.MESSAGE_BUFFERING, gst.MESSAGE_DURATION, gst.MESSAGE_TAG,
+                   gst.MESSAGE_STATE_CHANGED, gst.MESSAGE_STREAM_STATUS]:
+            # Ignore the message
+            return
         else:
-            print("I don't know what to do with this message")
             print(t)
             print(message)
             return
