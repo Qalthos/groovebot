@@ -56,8 +56,10 @@ class PandApi:
         elif t == gst.MESSAGE_ERROR:
             err, debug = message.parse_error()
             print "Error: %s" % err, debug
-        elif t in [gst.MESSAGE_BUFFERING, gst.MESSAGE_DURATION, gst.MESSAGE_TAG,
-                   gst.MESSAGE_STATE_CHANGED, gst.MESSAGE_STREAM_STATUS]:
+        elif t in [gst.MESSAGE_ELEMENT, gst.MESSAGE_DURATION, gst.MESSAGE_TAG,
+                   gst.MESSAGE_STATE_CHANGED, gst.MESSAGE_STREAM_STATUS,
+                   gst.MESSAGE_BUFFERING, gst.MESSAGE_NEW_CLOCK,
+                   gst.MESSAGE_ASYNC_DONE]:
             # Ignore the message
             return
         else:

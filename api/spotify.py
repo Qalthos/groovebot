@@ -21,6 +21,8 @@
 
 from spytify import Spytify
 
+import util
+
 class SpotApi:
     def __init__(self, uname, upass):
         self.__file_time = 0
@@ -50,8 +52,7 @@ class SpotApi:
         result = None
         if not search_result.total_tracks == 0:
             track = search_result.playlist.tracks[0]
-            result = dict(SongID=track.get_uri(), SongName=track.title,
-                ArtistName=track.artists[0].name, AlbumName=track.album)
+            result = self.translate_song(track)
             self.__song_db[track.get_uri()] = result
         return result
 
@@ -67,9 +68,12 @@ class SpotApi:
         self.__last_mode = 'playing'
 
     def auto_play(self):
-        if self.__last_mode == 'stopped' and not len(self.__queue) == 0:
-            song_uri = self.__queue.pop(0)
-            self.play_song(song_uri)
+        if not self.__api.current_track:
+            if not len(self.__queue) == 0:
+                song_uri = self.__queue.pop(0)
+                self.play_song(song_uri)
+            else:
+                self.api_stop()
 
     def remove_queue(self, uri):
         try:
@@ -77,6 +81,12 @@ class SpotApi:
             return True
         except:
             return False
+
+    def translate_song(self, track):
+        return dict(SongID=track.get_uri(),
+                    SongName=util.asciify(track.title),
+                    ArtistName=util.asciify(track.artists[0].name),
+                    AlbumName=util.asciify(track.album))
 
     ###### API CALLS #######
     def api_pause(self):

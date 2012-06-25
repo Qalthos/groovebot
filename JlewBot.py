@@ -61,6 +61,7 @@ class JlewBot(IRCClient):
 
 class JlewBotFactory(ReconnectingClientFactory):
     protocol = JlewBot
+    active_bot = None
 
     def __init__(self, protocol=protocol):
         self.protocol = protocol
@@ -69,7 +70,6 @@ class JlewBotFactory(ReconnectingClientFactory):
         self.default_cmd_handler = self.__default_cmd
         IRCClient.nickname = protocol.bot_name
         IRCClient.realname = protocol.bot_name
-        active_bot = None
 
     def add_bot(self, bot):
         self.active_bot = bot
@@ -82,11 +82,8 @@ class JlewBotFactory(ReconnectingClientFactory):
         cb(responder, user, channel, command, msg)
 
     def __default_cmd(self, responder, user, channel, command, msg):
-        if command == "list":
+        if command == "help":
             responder("Available Commands: %s" % ', '.join(self.registered_commands.keys()))
-
-        elif command == "help":
-            responder("To view a list of available commands type \"list\".")
 
         else:
             responder("Command not recognized")

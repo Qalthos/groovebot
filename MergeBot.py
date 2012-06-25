@@ -16,6 +16,7 @@
 
 from getpass import getpass
 import sys
+import time
 
 from twisted.internet import reactor, threads, utils
 from twisted.internet.task import LoopingCall
@@ -29,12 +30,14 @@ CONTROL = ['add', 'remove', 'oops']
 PLAYBACK = ['pause', 'resume', 'skip']
 QUEUE = ['show', 'dump', 'status']
 VOTE = ['vote']
+RADIO = ['radio']
 
 
 class MergeBot(VolBot):
     bot_name = 'foss_groovebot'
+    current_song = ''
+    api_inst = None
     song_request_db = {}
-    current_song = None
 
     def setup(self, f, api):
         # super() for classic classes:
@@ -44,29 +47,25 @@ class MergeBot(VolBot):
             f.register_command(command, self.request_queue_song)
         self.api_inst = api
 
-    def _playback_status(self):
+    def playback_status(self):
         self.api_inst.auto_play()
         song = self.api_inst.current_song
-        #if song:
-        #    self.describe(self.channel, 'Playing "%s" by %s' % \
-        #            (song['SongName'], song['ArtistName']))
+        if not song['SongName'] == self.current_song:
+            self.current_song = song['SongName']
+            self.describe(self.channel, 'Playing %s' % self._display_name(song))
 
-    def check_status(self):
-        threads.deferToThread(self._playback_status).addErrback(util.err_console)
-
-    def _add_lookup_cb(self, song_packet, responder, user):
-        if not song_packet:
+    def _add_lookup_cb(self, song, responder, user):
+        if not song:
             responder("No songs found.")
 
-        elif song_packet['SongID'] in self.api_inst.queue:
-            responder('"%s" by %s is already in queue' % (\
-                song_packet['SongName'], song_packet['ArtistName']))
+        elif song['SongID'] in self.api_inst.queue:
+            responder('%s is already in queue' % self._display_name(song, rating=False))
         else:
-            responder('Queueing %s: "%s" by %s on %s' % (\
-                song_packet['SongID'], song_packet['SongName'],
-                song_packet['ArtistName'], song_packet['AlbumName']))
-            self.song_request_db[song_packet['SongID']] = user
-            threads.deferToThread(self.api_inst.queue_song, song_packet['SongID']).addErrback(util.err_chat, responder)
+            responder('Queueing %s: %s' % (song['SongID'],
+                                           self._display_name(song, album=True)))
+            self.song_request_db[song['SongID']] = user
+            threads.deferToThread(self.api_inst.queue_song, song['SongID']) \
+                   .addErrback(util.err_chat, responder)
 
     def request_queue_song(self, responder, user, channel, command, msg):
         if channel == self.bot_name and command not in self.quiet:
@@ -84,7 +83,7 @@ class MergeBot(VolBot):
                 responder('Could not remove %s' % msg)
 
         elif command == "oops":
-            queue = self.api_inst.queue.reverse()
+            queue = reversed(self.api_inst.queue)
             for id in queue:
                 if user == self.song_request_db[id]:
                     self.api_inst.remove_queue(id)
@@ -96,16 +95,16 @@ class MergeBot(VolBot):
         elif command == "show":
             songNames = []
             song_db = self.api_inst.song_db
-            for song in self.api_inst.queue:
-                songNames.append('"%s" by %s' % (song_db[song]['SongName'], song_db[song]['ArtistName']))
+            for song_id in self.api_inst.queue:
+                song = song_db[song_id]
+                songNames.append('%s' % self._display_name(song))
             responder(', '.join(songNames))
 
         elif command == "dump":
             song_db = self.api_inst.song_db
-            for id in self.api_inst.queue:
-                song = song_db[id]
-                responder('"%s" by %s on %s' % (song['SongName'],
-                    song['ArtistName'], song['AlbumName']))
+            for song_id in self.api_inst.queue:
+                song = song_db[song_id]
+                responder('%s' % self._display_name(song, album=True))
 
         elif command == "pause":
             threads.deferToThread(self.api_inst.api_pause).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
@@ -116,10 +115,16 @@ class MergeBot(VolBot):
         elif command == "skip":
             threads.deferToThread(self.api_inst.api_next).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
 
+        elif command == "radio":
+            if msg == "on":
+                threads.deferToThread(self.api_inst.api_radio_on).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
+            elif msg == "off":
+                threads.deferToThread(self.api_inst.api_radio_off).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
+
         elif command == "status":
             song = self.api_inst.current_song
             if song:
-                responder('"%s" by %s' % (song['SongName'], song['ArtistName']))
+                responder('%s' % self._display_name(song))
             else:
                 responder("No song playing.")
 
@@ -139,30 +144,65 @@ class MergeBot(VolBot):
                     vote = 'down'
                 responder('Current song has been voted %s' % vote)
 
+    def _display_name(self, song, album=False, rating=True):
+        """Method to consistently output songs for each use."""
+        return '"%s" by %s%s%s' % (song['SongName'], song['ArtistName'],
+                                   ' on ' + song['AlbumName'] if album else '',
+                                   ' ' + song.get('Rating') if rating else '')
 
-if __name__ == '__main__':
-    f = JlewBotFactory(protocol=MergeBot)
 
-    if sys.argv[1] == 'mpd':
-        bot = MergeBot()
+def check_status(factory):
+    if factory.active_bot:
+        threads.deferToThread(factory.active_bot.playback_status) \
+               .addErrback(util.err_console)
+
+
+def pick_backend(backend, factory):
+    while not factory.active_bot:
+        print('Not ready yet.')
+        time.sleep(2)
+
+    bot = factory.active_bot
+
+    if backend == 'mpd':
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
-        from MPDApi import MPDApi
-        bot.setup(f, MPDApi())
+        from api.mpd import MPDApi
+        api = MPDApi()
 
-    elif sys.argv[1] == 'pandora':
-        bot = MergeBot()
+    elif backend == 'pandora':
         bot.capabilities = QUEUE + PLAYBACK + VOTE
         bot.quiet = QUEUE
 
-        from PandApi import PandApi
+        from api.pandora import PandApi
         uname = raw_input('Enter your Pandora username: ').strip()
         upass = getpass('Enter your Pandora password: ').strip()
         station = raw_input('Which station would you like to connect to: ').strip()
         if not (uname and upass and station):
              sys.exit()
-        bot.setup(f, PandApi(uname, upass, station))
+        api = PandApi(uname, upass, station)
+
+    elif backend == 'spotify':
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL
+        bot.quiet = QUEUE
+
+        from api.spotify import SpotApi
+        uname = raw_input('Enter your Spotify username: ').strip()
+        upass = getpass('Enter your Spotify password: ').strip()
+        if not (uname and upass):
+             sys.exit()
+        api = SpotApi(uname, upass)
+
+    bot.setup(factory, api)
+    return 2
+
+
+if __name__ == '__main__':
+    f = JlewBotFactory(protocol=MergeBot)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    lc = LoopingCall(bot.check_status).start(2)
+
+    lc = LoopingCall(check_status, f)
+    threads.deferToThread(pick_backend, sys.argv[1], f) \
+           .addCallback(lc.start).addErrback(util.err_console)
     reactor.run()
