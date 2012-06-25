@@ -49,9 +49,10 @@ class MergeBot(VolBot):
     def playback_status(self):
         self.api_inst.auto_play()
         song = self.api_inst.current_song
-        #if song:
-        #    self.describe(self.channel, 'Playing "%s" by %s' % \
-        #            (song['SongName'], song['ArtistName']))
+        if not song['SongName'] == self.current_song:
+            self.current_song = song['SongName']
+            self.describe(self.channel, 'Playing "%s" by %s' % \
+                    (song['SongName'], song['ArtistName']))
 
     def _add_lookup_cb(self, song_packet, responder, user):
         if not song_packet:
