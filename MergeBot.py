@@ -30,6 +30,7 @@ CONTROL = ['add', 'remove', 'oops']
 PLAYBACK = ['pause', 'resume', 'skip']
 QUEUE = ['show', 'dump', 'status']
 VOTE = ['vote']
+RADIO = ['radio']
 
 
 class MergeBot(VolBot):
