@@ -33,8 +33,9 @@ VOTE = ['vote']
 
 class MergeBot(VolBot):
     bot_name = 'foss_groovebot'
+    current_song = ''
+    api_inst = None
     song_request_db = {}
-    current_song = None
 
     def setup(self, f, api):
         # super() for classic classes:
