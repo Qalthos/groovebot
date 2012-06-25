@@ -32,11 +32,8 @@ class SpotBot(VolBot):
     song_request_db = {}
 
     def setup(self, f, uname, upass):
-        #super(SpotBot, self).setup(f)
-        f.register_command('vol', self.volume_change)
-        f.register_command('source', self.simple_response)
-        reactor.callWhenRunning(self._set_vol)
-        # ^ super?
+        # super() for classic classes:
+        VolBot.setup(self, f)
 
         for command in ['add','remove', 'oops','show','pause','resume','skip','status','dump','radio']:
             f.register_command(command, self.request_queue_song)
