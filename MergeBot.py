@@ -27,8 +27,8 @@ import util
 
 
 CONTROL = ['add', 'remove', 'oops']
-PLAYBACK = ['pause', 'resume', 'skip']
-QUEUE = ['show', 'dump', 'status']
+PLAYBACK = ['pause', 'resume']
+QUEUE = ['show', 'dump', 'status', 'skip']
 VOTE = ['vote']
 RADIO = ['radio']
 TIRED = ['lame']
