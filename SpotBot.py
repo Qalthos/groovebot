@@ -127,7 +127,7 @@ class SpotBot(VolBot):
 
 
 if __name__ == '__main__':
-    upass = getpass('Enter your password: ').strip()
+    upass = getpass('Enter your Spotify password: ').strip()
     if not len(sys.argv) == 2 or not upass:
         sys.exit()
     bot = SpotBot()
