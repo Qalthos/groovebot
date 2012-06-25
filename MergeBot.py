@@ -125,7 +125,10 @@ class MergeBot(VolBot):
         elif command == "status":
             song = self.api_inst.current_song
             if song:
-                responder('"%s" by %s' % (song['SongName'], song['ArtistName']))
+                msg = '"%s" by %s' % (song['SongName'], song['ArtistName'])
+                if song.get('Rating'):
+                    msg = '%s %s' % (msg, song['Rating'])
+                responder(msg)
             else:
                 responder("No song playing.")
 
