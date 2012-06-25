@@ -181,6 +181,17 @@ def pick_backend(backend, factory):
              sys.exit()
         api = PandApi(uname, upass, station)
 
+    elif backend == 'spotify':
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL
+        bot.quiet = QUEUE
+
+        from SpotApi import SpotApi
+        uname = raw_input('Enter your Spotify username: ').strip()
+        upass = getpass('Enter your Spotify password: ').strip()
+        if not (uname and upass):
+             sys.exit()
+        api = SpotApi(uname, upass)
+
     bot.setup(factory, api)
     return 2
 
