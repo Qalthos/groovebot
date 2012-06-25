@@ -43,13 +43,6 @@ class GrooveBot(VolBot):
         for command in ['add','remove','show','pause','resume','skip','status','dump','radio']:
             f.register_command(command, self.request_queue_song)
 
-    def convert_to_ascii(self, data):
-        try:
-            d = str(data)
-        except:
-            d = unicodedata.normalize('NFKD', data).encode('ascii','ignore')
-        return d
-
     def _file_status(self, s, bot, channel):
         if s:
             msg = "%s: \"%s\" by \"%s\" on \"%s\"" % \
