@@ -16,6 +16,7 @@
 
 from getpass import getpass
 import sys
+import time
 
 from twisted.internet import reactor, threads, utils
 from twisted.internet.task import LoopingCall
@@ -45,15 +46,12 @@ class MergeBot(VolBot):
             f.register_command(command, self.request_queue_song)
         self.api_inst = api
 
-    def _playback_status(self):
+    def playback_status(self):
         self.api_inst.auto_play()
         song = self.api_inst.current_song
         #if song:
         #    self.describe(self.channel, 'Playing "%s" by %s' % \
         #            (song['SongName'], song['ArtistName']))
-
-    def check_status(self):
-        threads.deferToThread(self._playback_status).addErrback(util.err_console)
 
     def _add_lookup_cb(self, song_packet, responder, user):
         if not song_packet:
@@ -150,19 +148,27 @@ class MergeBot(VolBot):
                 responder('Current song has been voted %s' % vote)
 
 
-if __name__ == '__main__':
-    f = JlewBotFactory(protocol=MergeBot)
+def check_status(factory):
+    if factory.active_bot:
+        threads.deferToThread(factory.active_bot.playback_status) \
+               .addErrback(util.err_console)
 
-    if sys.argv[1] == 'mpd':
-        bot = MergeBot()
+
+def pick_backend(backend, factory):
+    while not factory.active_bot:
+        print('Not ready yet.')
+        time.sleep(2)
+
+    bot = factory.active_bot
+
+    if backend == 'mpd':
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
         from MPDApi import MPDApi
-        bot.setup(f, MPDApi())
+        api = MPDApi()
 
-    elif sys.argv[1] == 'pandora':
-        bot = MergeBot()
+    elif backend == 'pandora':
         bot.capabilities = QUEUE + PLAYBACK + VOTE
         bot.quiet = QUEUE
 
@@ -172,7 +178,17 @@ if __name__ == '__main__':
         station = raw_input('Which station would you like to connect to: ').strip()
         if not (uname and upass and station):
              sys.exit()
-        bot.setup(f, PandApi(uname, upass, station))
+        api = PandApi(uname, upass, station)
+
+    bot.setup(factory, api)
+    return 2
+
+
+if __name__ == '__main__':
+    f = JlewBotFactory(protocol=MergeBot)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    lc = LoopingCall(bot.check_status).start(2)
+
+    lc = LoopingCall(check_status, f)
+    threads.deferToThread(pick_backend, sys.argv[1], f) \
+           .addCallback(lc.start).addErrback(util.err_console)
     reactor.run()
