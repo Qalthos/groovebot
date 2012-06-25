@@ -167,14 +167,14 @@ def pick_backend(backend, factory):
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
-        from MPDApi import MPDApi
+        from api.mpd import MPDApi
         api = MPDApi()
 
     elif backend == 'pandora':
         bot.capabilities = QUEUE + PLAYBACK + VOTE
         bot.quiet = QUEUE
 
-        from PandApi import PandApi
+        from api.pandora import PandApi
         uname = raw_input('Enter your Pandora username: ').strip()
         upass = getpass('Enter your Pandora password: ').strip()
         station = raw_input('Which station would you like to connect to: ').strip()
@@ -186,7 +186,7 @@ def pick_backend(backend, factory):
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
-        from SpotApi import SpotApi
+        from api.spotify import SpotApi
         uname = raw_input('Enter your Spotify username: ').strip()
         upass = getpass('Enter your Spotify password: ').strip()
         if not (uname and upass):
