@@ -116,6 +116,12 @@ class MergeBot(VolBot):
         elif command == "skip":
             threads.deferToThread(self.api_inst.api_next).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
 
+        elif command == "radio":
+            if msg == "on":
+                threads.deferToThread(self.api_inst.api_radio_on).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
+            elif msg == "off":
+                threads.deferToThread(self.api_inst.api_radio_off).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
+
         elif command == "status":
             song = self.api_inst.current_song
             if song:
