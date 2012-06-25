@@ -82,11 +82,8 @@ class JlewBotFactory(ReconnectingClientFactory):
         cb(responder, user, channel, command, msg)
 
     def __default_cmd(self, responder, user, channel, command, msg):
-        if command == "list":
+        if command == "help":
             responder("Available Commands: %s" % ', '.join(self.registered_commands.keys()))
-
-        elif command == "help":
-            responder("To view a list of available commands type \"list\".")
 
         else:
             responder("Command not recognized")
