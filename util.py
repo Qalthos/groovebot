@@ -29,10 +29,10 @@ def ok(msg, responder, extra=""):
 
 def err_chat(err, responder):
     """This is for an error which will be shown to the user."""
-    responder("ERROR Occurred %r" % err)
-    err.printTraceback()
+    responder("ERROR Occurred %s" % err)
+    err_console(err)
 
 def err_console(err):
     """This is a quieter error that only prints to console."""
-    print("ERROR Occurrred %r" % err)
+    print("ERROR Occurrred %s" % err)
     err.printTraceback()
