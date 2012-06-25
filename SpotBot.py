@@ -79,7 +79,7 @@ class SpotBot(VolBot):
                 responder('Could not remove %s' % msg)
 
         elif command == "oops":
-            queue = self.api_inst.queue.reverse()
+            queue = reversed(self.api_inst.queue)
             for id in queue:
                 if user == self.song_request_db[id]:
                     self.api_inst.remove_queue(id)
