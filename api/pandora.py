@@ -67,8 +67,7 @@ class PandApi:
             print(message)
             return
 
-        self.__player.set_state(gst.STATE_NULL)
-        self.__last_mode = 'stopped'
+        self.api_stop()
 
     @property
     def song_db(self):
