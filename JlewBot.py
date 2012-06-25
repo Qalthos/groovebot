@@ -61,6 +61,7 @@ class JlewBot(IRCClient):
 
 class JlewBotFactory(ReconnectingClientFactory):
     protocol = JlewBot
+    active_bot = None
 
     def __init__(self, protocol=protocol):
         self.protocol = protocol
@@ -69,7 +70,6 @@ class JlewBotFactory(ReconnectingClientFactory):
         self.default_cmd_handler = self.__default_cmd
         IRCClient.nickname = protocol.bot_name
         IRCClient.realname = protocol.bot_name
-        active_bot = None
 
     def add_bot(self, bot):
         self.active_bot = bot
