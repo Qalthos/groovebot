@@ -200,14 +200,11 @@ def pick_backend(backend, factory):
         api = SpotApi(uname, upass)
 
     bot.setup(factory, api)
-    return 2
+    LoopingCall(check_status, factory).start(2).addErrback(util.err_console)
 
 
 if __name__ == '__main__':
     f = JlewBotFactory(protocol=MergeBot)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-
-    lc = LoopingCall(check_status, f)
-    threads.deferToThread(pick_backend, sys.argv[1], f) \
-           .addCallback(lc.start).addErrback(util.err_console)
+    reactor.callLater(10, pick_backend, sys.argv[1], f)
     reactor.run()
