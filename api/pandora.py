@@ -277,17 +277,13 @@ class PandApi:
 
     def api_radio_get_vote(self):
         """
-        If radio is on, then the current song will receive a frown
-        (dislike).
-        After being frowned, a song will stop playing and the next
-        song will begin playing.
+        If radio is on, then the current song will receive a frown (dislike).
         """
         return self.__current.rating
 
-    def api_addtolibrary(self):
+    def api_radio_tired(self):
         """
-        Adds the currently playing song to the users library
-        If no song is playing, this will do nothing.
-        Coming soon.
+        If radio is on, this will mark the song as having been played too often
+        and prevent it from being played for a period of time.
         """
-        raise NotImplementedError
+        self.__current.set_tired()

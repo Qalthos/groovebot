@@ -31,6 +31,7 @@ PLAYBACK = ['pause', 'resume', 'skip']
 QUEUE = ['show', 'dump', 'status']
 VOTE = ['vote']
 RADIO = ['radio']
+TIRED = ['lame']
 
 
 class MergeBot(VolBot):
@@ -144,6 +145,10 @@ class MergeBot(VolBot):
                     vote = 'down'
                 responder('Current song has been voted %s' % vote)
 
+        elif command == 'lame':
+            self.api_inst.api_radio_tired()
+            responder('Current song will not be played for a while.')
+
     def _display_name(self, song, album=False, rating=True):
         """Method to consistently output songs for each use."""
         return '"%s" by %s%s%s' % (song['SongName'], song['ArtistName'],
@@ -172,7 +177,7 @@ def pick_backend(backend, factory):
         api = MPDApi()
 
     elif backend == 'pandora':
-        bot.capabilities = QUEUE + PLAYBACK + VOTE
+        bot.capabilities = QUEUE + PLAYBACK + VOTE + TIRED
         bot.quiet = QUEUE
 
         from api.pandora import PandApi
