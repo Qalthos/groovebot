@@ -39,12 +39,12 @@ class MergeBot(VolBot):
     api_inst = None
     song_request_db = {}
 
-    def setup(self, f, api):
+    def setup(self, factory, api):
         # super() for classic classes:
-        VolBot.setup(self, f)
+        VolBot.setup(self, factory)
 
         for command in self.capabilities:
-            f.register_command(command, self.request_queue_song)
+            factory.register_command(command, self.request_queue_song)
         self.api_inst = api
 
     def playback_status(self):
@@ -84,21 +84,21 @@ class MergeBot(VolBot):
 
         elif command == "oops":
             queue = reversed(self.api_inst.queue)
-            for id in queue:
-                if user == self.song_request_db[id]:
-                    self.api_inst.remove_queue(id)
-                    responder('Removed %s' % id)
+            for song_id in queue:
+                if user == self.song_request_db[song_id]:
+                    self.api_inst.remove_queue(song_id)
+                    responder('Removed %s' % song_id)
                     break
             else:
                 responder('There was nothing to remove')
 
         elif command == "show":
-            songNames = []
+            song_names = []
             song_db = self.api_inst.song_db
             for song_id in self.api_inst.queue:
                 song = song_db[song_id]
-                songNames.append('%s' % self._display_name(song))
-            responder(', '.join(songNames))
+                song_names.append('%s' % self._display_name(song))
+            responder(', '.join(song_names))
 
         elif command == "dump":
             song_db = self.api_inst.song_db
