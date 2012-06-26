@@ -17,10 +17,10 @@
 from getpass import getpass
 import sys
 
-from twisted.internet import reactor, threads, utils
+from twisted.internet import reactor, threads
 from twisted.internet.task import LoopingCall
 
-from SpotApi import SpotApi
+from api.spotify import SpotApi
 
 from JlewBot import JlewBotFactory
 from VolBot import VolBot
@@ -39,12 +39,12 @@ class SpotBot(VolBot):
             f.register_command(command, self.request_queue_song)
         self.api_inst = SpotApi(uname, upass)
 
-    def _playback_status(self):
+    def playback_status(self):
         if not self.api_inst.current_song and not len(self.api_inst.queue) == 0:
             self.api_inst.api_next()
             song = self.api_inst.current_song
             if song:
-                self.describe(self.channel, 'Playing "%s" by "%s"' % (song['SongName'], song['ArtistName']))
+                self.describe(self.channel, 'Playing "%s" by %s' % (song['SongName'], song['ArtistName']))
 
     def check_status(self):
         threads.deferToThread(self._playback_status).addErrback(util.err_console)
@@ -126,13 +126,29 @@ class SpotBot(VolBot):
                 responder("No song playing.")
 
 
-if __name__ == '__main__':
+def check_status(factory):
+    if factory.active_bot:
+        threads.deferToThread(factory.active_bot.playback_status) \
+               .addErrback(util.err_console)
+
+
+def startup(factory):
+    while not factory.active_bot:
+        print('Not ready yet.')
+        reactor.callLater(2, startup, factory)
+        return
+
+    bot = factory.active_bot
+    uname = raw_input('Enter your Spotify username: ').strip()
     upass = getpass('Enter your Spotify password: ').strip()
-    if not len(sys.argv) == 2 or not upass:
-        sys.exit()
-    bot = SpotBot()
+    if not (uname and upass):
+        reactor.stop()
+
+    bot.setup(factory, uname, upass)
+    LoopingCall(check_status, factory).start(2).addErrback(util.err_console)
+
+if __name__ == '__main__':
     f = JlewBotFactory(protocol=SpotBot)
-    bot.setup(f, sys.argv[1], upass)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    lc = LoopingCall(bot.check_status).start(2)
+    reactor.callLater(2, startup, f)
     reactor.run()
