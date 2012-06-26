@@ -16,9 +16,8 @@
 
 from getpass import getpass
 import sys
-import time
 
-from twisted.internet import reactor, threads, utils
+from twisted.internet import reactor, threads
 from twisted.internet.task import LoopingCall
 
 from JlewBot import JlewBotFactory
@@ -165,7 +164,8 @@ def check_status(factory):
 def pick_backend(backend, factory):
     while not factory.active_bot:
         print('Not ready yet.')
-        time.sleep(2)
+        reactor.callLater(2, pick_backend, backend, factory)
+        return
 
     bot = factory.active_bot
 
