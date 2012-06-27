@@ -16,9 +16,8 @@
 
 from getpass import getpass
 import sys
-import time
 
-from twisted.internet import reactor, threads, utils
+from twisted.internet import reactor, threads
 from twisted.internet.task import LoopingCall
 
 from JlewBot import JlewBotFactory
@@ -27,8 +26,8 @@ import util
 
 
 CONTROL = ['add', 'remove', 'oops']
-PLAYBACK = ['pause', 'resume', 'skip']
-QUEUE = ['show', 'dump', 'status']
+PLAYBACK = ['pause', 'resume']
+QUEUE = ['show', 'dump', 'status', 'skip']
 VOTE = ['vote']
 RADIO = ['radio']
 TIRED = ['lame']
@@ -40,17 +39,19 @@ class MergeBot(VolBot):
     api_inst = None
     song_request_db = {}
 
-    def setup(self, f, api):
+    def setup(self, factory, api):
         # super() for classic classes:
-        VolBot.setup(self, f)
+        VolBot.setup(self, factory)
 
         for command in self.capabilities:
-            f.register_command(command, self.request_queue_song)
+            factory.register_command(command, self.request_queue_song)
         self.api_inst = api
 
     def playback_status(self):
         self.api_inst.auto_play()
         song = self.api_inst.current_song
+        if not song:
+            return
         if not song['SongName'] == self.current_song:
             self.current_song = song['SongName']
             self.describe(self.channel, 'Playing %s' % self._display_name(song))
@@ -85,21 +86,21 @@ class MergeBot(VolBot):
 
         elif command == "oops":
             queue = reversed(self.api_inst.queue)
-            for id in queue:
-                if user == self.song_request_db[id]:
-                    self.api_inst.remove_queue(id)
-                    responder('Removed %s' % id)
+            for song_id in queue:
+                if user == self.song_request_db[song_id]:
+                    self.api_inst.remove_queue(song_id)
+                    responder('Removed %s' % song_id)
                     break
             else:
                 responder('There was nothing to remove')
 
         elif command == "show":
-            songNames = []
+            song_names = []
             song_db = self.api_inst.song_db
             for song_id in self.api_inst.queue:
                 song = song_db[song_id]
-                songNames.append('%s' % self._display_name(song))
-            responder(', '.join(songNames))
+                song_names.append('%s' % self._display_name(song))
+            responder(', '.join(song_names))
 
         elif command == "dump":
             song_db = self.api_inst.song_db
@@ -153,7 +154,7 @@ class MergeBot(VolBot):
         """Method to consistently output songs for each use."""
         return '"%s" by %s%s%s' % (song['SongName'], song['ArtistName'],
                                    ' on ' + song['AlbumName'] if album else '',
-                                   ' ' + song.get('Rating') if rating else '')
+                                   ' ' + song.get('Rating', '') if rating else '')
 
 
 def check_status(factory):
@@ -165,7 +166,8 @@ def check_status(factory):
 def pick_backend(backend, factory):
     while not factory.active_bot:
         print('Not ready yet.')
-        time.sleep(2)
+        reactor.callLater(2, pick_backend, backend, factory)
+        return
 
     bot = factory.active_bot
 
@@ -185,7 +187,8 @@ def pick_backend(backend, factory):
         upass = getpass('Enter your Pandora password: ').strip()
         station = raw_input('Which station would you like to connect to: ').strip()
         if not (uname and upass and station):
-             sys.exit()
+            reactor.stop()
+            return
         api = PandApi(uname, upass, station)
 
     elif backend == 'spotify':
@@ -196,18 +199,16 @@ def pick_backend(backend, factory):
         uname = raw_input('Enter your Spotify username: ').strip()
         upass = getpass('Enter your Spotify password: ').strip()
         if not (uname and upass):
-             sys.exit()
+            reactor.stop()
+            return
         api = SpotApi(uname, upass)
 
     bot.setup(factory, api)
-    return 2
+    LoopingCall(check_status, factory).start(2).addErrback(util.err_console)
 
 
 if __name__ == '__main__':
     f = JlewBotFactory(protocol=MergeBot)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-
-    lc = LoopingCall(check_status, f)
-    threads.deferToThread(pick_backend, sys.argv[1], f) \
-           .addCallback(lc.start).addErrback(util.err_console)
+    reactor.callLater(10, pick_backend, sys.argv[1], f)
     reactor.run()
