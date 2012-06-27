@@ -65,12 +65,12 @@ class SpotApi:
         self.__last_mode = 'playing'
 
     def auto_play(self):
-        if not self.__api.current_track:
+        if not (self.__last_mode == 'stopped' or self.__api.current_track):
             if not len(self.__queue) == 0:
                 song_uri = self.__queue.pop(0)
                 self.play_song(song_uri)
             else:
-                self.api_stop()
+                self.__last_mode == 'stopped'
 
     def remove_queue(self, uri):
         try:
