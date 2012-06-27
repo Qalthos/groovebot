@@ -152,7 +152,7 @@ class MergeBot(VolBot):
         """Method to consistently output songs for each use."""
         return '"%s" by %s%s%s' % (song['SongName'], song['ArtistName'],
                                    ' on ' + song['AlbumName'] if album else '',
-                                   ' ' + song.get('Rating') if rating else '')
+                                   ' ' + song.get('Rating', '') if rating else '')
 
 
 def check_status(factory):
