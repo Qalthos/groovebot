@@ -50,6 +50,8 @@ class MergeBot(VolBot):
     def playback_status(self):
         self.api_inst.auto_play()
         song = self.api_inst.current_song
+        if not song:
+            return
         if not song['SongName'] == self.current_song:
             self.current_song = song['SongName']
             self.describe(self.channel, 'Playing %s' % self._display_name(song))
