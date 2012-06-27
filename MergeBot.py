@@ -187,7 +187,8 @@ def pick_backend(backend, factory):
         upass = getpass('Enter your Pandora password: ').strip()
         station = raw_input('Which station would you like to connect to: ').strip()
         if not (uname and upass and station):
-             sys.exit()
+            reactor.stop()
+            return
         api = PandApi(uname, upass, station)
 
     elif backend == 'spotify':
@@ -198,7 +199,8 @@ def pick_backend(backend, factory):
         uname = raw_input('Enter your Spotify username: ').strip()
         upass = getpass('Enter your Spotify password: ').strip()
         if not (uname and upass):
-             sys.exit()
+            reactor.stop()
+            return
         api = SpotApi(uname, upass)
 
     bot.setup(factory, api)
