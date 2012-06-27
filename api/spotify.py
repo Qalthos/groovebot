@@ -1,7 +1,4 @@
-# Groove Api
-#
-# Api Documentation:
-#    http://grooveshark.wikia.com/wiki/External_Player_Control_API_Docs
+# Spotify Api
 #
 #    This file is part of GrooveBot.
 #
