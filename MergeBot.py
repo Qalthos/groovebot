@@ -195,7 +195,7 @@ def pick_backend(backend, factory):
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
-        from api.spotify import SpotApi
+        from api.libspotify import SpotApi
         uname = raw_input('Enter your Spotify username: ').strip()
         upass = getpass('Enter your Spotify password: ').strip()
         if not (uname and upass):
