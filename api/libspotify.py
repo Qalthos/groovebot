@@ -18,6 +18,7 @@
 import os
 import threading
 
+import spotify
 from spotify.audiosink import import_audio_sink
 from spotify.manager import SpotifySessionManager
 
@@ -42,6 +43,9 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         self.__queue = []
         self.__current_song = None
         self.__song_db = {}
+        self.__result = []
+        self.__search_lock = threading.Condition()
+        self.connected = threading.Event()
         self.session = None
         self.start()
 
@@ -61,14 +65,38 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         return self.__song_db.copy()
 
     def request_song_from_api(self, query):
-        def search_callback(results, userdata):
-            print('we got %d match(es)' % results.total_tracks())
-            if results and results.total_tracks() > 0:
-                self.__queue_song(results.tracks()[0])
-            else:
-                print('Error queueing song')
+        """
+        Send a search query to the API.
 
+        @param query: A string to send to the search.
+
+        @return: A dictionary of metadata about the song.
+        """
+
+        def search_callback(results, userdata):
+            # Pick up the lock so we only make one search at a time.
+            with self.__search_lock:
+                print('we got %d match(es)' % results.total_tracks())
+                if results and results.total_tracks() > 0:
+                    self.__result.append(results.tracks()[0])
+                else:
+                    self.__result.append(None)
+                    print('Error queueing song')
+                # Tell the consumer that an answer has been decided on
+                self.__search_lock.notify()
+
+        self.connected.wait()
         self.session.search(query, search_callback)
+        # Pick up the lock in case we get two searches at the same time
+        with self.__search_lock:
+            if not self.__result:
+                # If there's no results, we beat the callback, so wait for a
+                # notify()
+                self.__search_lock.wait()
+            result = self.__result.pop()
+            result_id = spotify.Link.from_track(result)
+            self.__song_db[result_id] = self.translate_song(result)
+        return self.__song_db[result_id]
 
     def remove_queue(self, uri):
         try:
@@ -87,12 +115,15 @@ class SpotApi(SpotifySessionManager, threading.Thread):
                 self.api_stop()
 
     def translate_song(self, song):
-        return dict(SongName=util.asciify(song.name()),
+        if not song:
+            return dict()
+        return dict(SongID=str(spotify.Link.from_track(song)),
+                    SongName=util.asciify(song.name()),
                     ArtistName=util.asciify(song.artists()[0]),
                     AlbumName=util.asciify(song.album()))
 
-    def __queue_song(self, song):
-        self.__queue.append(song)
+    def queue_song(self, song_id):
+        self.__queue.append(spotify.Link.from_string(song_id).as_track())
         self.auto_play()
 
     def __play_song(self, song):
@@ -285,6 +316,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
             print error
             return
         self.session = session
+        self.connected.set()
         print('Logged in successfully')
 
     def end_of_track(self, session):
