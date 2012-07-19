@@ -61,10 +61,11 @@ class MergeBot(VolBot):
             responder("No songs found.")
 
         elif song['SongID'] in self.api_inst.queue:
-            responder('%s is already in queue' % self._display_name(song, rating=False))
+            responder('%s is already in queue' %
+                      self._display_name(song, rating=False))
         else:
             responder('Queueing %s: %s' % (song['SongID'],
-                                           self._display_name(song, album=True)))
+                                    self._display_name(song, album=True)))
             self.song_request_db[song['SongID']] = user
             threads.deferToThread(self.api_inst.queue_song, song['SongID']) \
                    .addErrback(util.err_chat, responder)
