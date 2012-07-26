@@ -108,7 +108,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
     def auto_play(self):
         if self.__state == 'stopped':
             if self.__queue:
-                self.__play_song(self.__queue.pop())
+                self.__play_song(spotify.Link.from_string(self.__queue.pop()) \
+                                             .as_track())
             else:
                 self.api_stop()
 
@@ -121,7 +122,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
                     AlbumName=util.asciify(song.album()))
 
     def queue_song(self, song_id):
-        self.__queue.append(spotify.Link.from_string(song_id).as_track())
+        self.__queue.append(song_id)
         self.auto_play()
 
     def __play_song(self, song):
