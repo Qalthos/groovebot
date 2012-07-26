@@ -194,50 +194,20 @@ class SpotApi(SpotifySessionManager, threading.Thread):
 
     def api_previous(self):
         """
-        Plays the previous song in the queue
-        If shuffle is enabled, it will play the last song played.
-        If no songs are left, it will do nothing.
-        If the current song has been playing for over 5 seconds, it
-        will restart the song.
-        """
-        raise NotImplementedError
-
-    def api_previous_song(self):
-        """
-        Behaves like previous except it will ALWAYS play the
-        previous song.
-        """
-        raise NotImplementedError
-
-    def api_volume_up(self):
-        """
-        Increases the volume by 20%
-        If the volume is >100% it will do nothing
-        If the volume is 0 it will set the volume to 10%
-        """
-        raise NotImplementedError
-
-    def api_volume_down(self):
-        """
-        Decreases the volume by 20%
-        Will continue to go to 0 indefinitely.
-        Requires version: v2.0 r20100518.2
+        Plays the previous song in the queue.
         """
         raise NotImplementedError
 
     def api_shuffle(self):
         """
-        Toggles between shuffle on/off
-        Shuffle is persistent as of v2.0 r20100518.2 and this command
-        will affect global shuffle setting
+        Shuffles entire playlist.  Probably should not be used.
         """
         raise NotImplementedError
 
     def api_clear_queue(self):
         """
         Clears the queue of all the songs.
-        This will also reset the repeat mode
-        If the queue is already cleared, this will do nothing
+        If the queue is already cleared, this will do nothing.
         """
         raise NotImplementedError
 
