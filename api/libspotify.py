@@ -15,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
+import collections
 import os
 import threading
 
@@ -40,7 +41,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
 
         self.__audio = AudioSink(backend=self)
         self.__state = 'stopped'
-        self.__queue = []
+        self.__queue = collections.deque()
         self.__current_song = None
         self.__song_db = {}
         self.__result = []
@@ -108,8 +109,9 @@ class SpotApi(SpotifySessionManager, threading.Thread):
     def auto_play(self):
         if self.__state == 'stopped':
             if self.__queue:
-                self.__play_song(spotify.Link.from_string(self.__queue.pop()) \
-                                             .as_track())
+                track = spotify.Link.from_string(self.__queue.popleft())
+                                    .as_track()
+                self.__play_song(track)
             else:
                 self.api_stop()
 
