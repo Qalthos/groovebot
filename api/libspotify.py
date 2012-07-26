@@ -106,8 +106,6 @@ class SpotApi(SpotifySessionManager, threading.Thread):
             return False
 
     def auto_play(self):
-        if not self.session:
-            return
         if self.__state == 'stopped':
             if self.__queue:
                 self.__play_song(self.__queue.pop())
@@ -138,6 +136,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         Pauses the current song
         Does nothing if no song is playing
         """
+        if not self.session:
+            return
         self.session.play(0)
         self.__audio.pause()
         self.__state = 'paused'
@@ -148,6 +148,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         If the current song is paused it resumes the song
         If no songs are in the queue, it does nothing
         """
+        if not self.session:
+            return
         self.__audio.start()
         self.session.play(1)
         self.__state = 'playing'
@@ -183,6 +185,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         Stops playback
         If no songs are in the queue, it does nothing
         """
+        if not self.session:
+            return
         self.session.play(0)
         self.__audio.stop()
         self.__state = 'stopped'
