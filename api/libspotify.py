@@ -95,6 +95,9 @@ class SpotApi(SpotifySessionManager, threading.Thread):
                 # notify()
                 self.__search_lock.wait()
             result = self.__result.pop()
+            if not result:
+                # We couldn't get a song from the API, so let the bot know.
+                return None
             result_id = str(spotify.Link.from_track(result))
             self.__song_db[result_id] = self.translate_song(result)
         return self.__song_db[result_id]
