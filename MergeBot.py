@@ -31,6 +31,7 @@ QUEUE = ['show', 'dump', 'status', 'skip']
 VOTE = ['vote']
 RADIO = ['radio']
 TIRED = ['lame']
+BLAME = ['blame']
 
 
 class MergeBot(VolBot):
@@ -102,6 +103,17 @@ class MergeBot(VolBot):
                 song = song_db[song_id]
                 song_names.append('%s' % self._display_name(song))
             responder(', '.join(song_names))
+
+        elif command == 'blame':
+            song = self.api_inst.current_song
+            if msg:
+                song = msg
+
+            user = self.song_request_db.get(msg)
+            if not user:
+                responder('No song like that was queued by anyone')
+            else:
+                responder('You can blame %s for that song.' % user)
 
         elif command == "dump":
             song_db = self.api_inst.song_db
@@ -193,7 +205,7 @@ def pick_backend(backend, factory):
         api = PandApi(uname, upass, station)
 
     elif backend == 'spotify':
-        bot.capabilities = QUEUE + PLAYBACK + CONTROL
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL + BLAME
         bot.quiet = QUEUE
 
         from api.libspotify import SpotApi
