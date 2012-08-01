@@ -52,7 +52,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
 
     @property
     def queue(self):
-        return self.__queue[:]
+        return list(self.__queue)
 
     @property
     def current_song(self):
@@ -112,11 +112,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
     def auto_play(self):
         if self.__state == 'stopped':
             if self.__queue:
-                track = spotify.Link.from_string(self.__queue.popleft())
-                                    .as_track()
-                self.__play_song(track)
-            else:
-                self.api_stop()
+                track_link = spotify.Link.from_string(self.__queue.popleft())
+                self.__play_song(track_link.as_track())
 
     def translate_song(self, song):
         if not song:
@@ -131,7 +128,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         self.auto_play()
 
     def __play_song(self, song):
-        print('playing %s by %s on %s' % (song.name(), song.artists()[0], song.album()))
+        print('loading %s by %s on %s' % (song.name(), song.artists()[0],
+                                          song.album()))
         self.session.load(song)
         self.__current_song = song
         self.api_play()
