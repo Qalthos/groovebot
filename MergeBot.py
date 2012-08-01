@@ -188,7 +188,7 @@ def pick_backend(backend, factory):
         bot.capabilities = QUEUE + PLAYBACK + CONTROL
         bot.quiet = QUEUE
 
-        from api.mpd import MPDApi
+        from api.mpd_wrapper import MPDApi
         api = MPDApi()
 
     elif backend == 'pandora':
