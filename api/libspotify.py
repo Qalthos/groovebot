@@ -120,8 +120,9 @@ class SpotApi(SpotifySessionManager, threading.Thread):
             return dict()
         return dict(SongID=str(spotify.Link.from_track(song)),
                     SongName=util.asciify(song.name()),
-                    ArtistName=util.asciify(song.artists()[0]),
-                    AlbumName=util.asciify(song.album()))
+                    ArtistName=util.asciify(song.artists()[0].name()),
+                    AlbumName=util.asciify(song.album().name()),
+                    )
 
     def queue_song(self, song_id):
         self.__queue.append(song_id)
