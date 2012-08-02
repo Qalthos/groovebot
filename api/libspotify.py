@@ -46,6 +46,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         self.__song_db = {}
         self.__result = []
         self.__search_lock = threading.Condition()
+        self.__skip_lock = threading.Lock()
         self.connected = threading.Event()
         self.session = None
         self.start()
@@ -110,10 +111,13 @@ class SpotApi(SpotifySessionManager, threading.Thread):
             return False
 
     def auto_play(self):
-        if self.__state == 'stopped':
-            if self.__queue:
-                track_link = spotify.Link.from_string(self.__queue.popleft())
-                self.__play_song(track_link.as_track())
+        # While not the most elegant solution, this will allow only one thread
+        # at a time to attempt to skip to the next song in the queue.
+        with self.__skip_lock:
+            if self.__state == 'stopped':
+                if self.__queue:
+                    track_link = spotify.Link.from_string(self.__queue.popleft())
+                    self.__play_song(track_link.as_track())
 
     def translate_song(self, song):
         if not song:
