@@ -105,7 +105,7 @@ class MergeBot(VolBot):
             responder(', '.join(song_names))
 
         elif command == 'blame':
-            song = self.api_inst.current_song
+            song = self.api_inst.current_song['SongID']
             if msg:
                 song = msg
 
