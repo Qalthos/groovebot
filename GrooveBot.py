@@ -17,7 +17,7 @@
 from twisted.internet import reactor, threads, utils
 from twisted.internet.task import LoopingCall
 
-from GrooveApi import GrooveApi
+from api.grooveshark import GrooveApi
 
 from JlewBot import JlewBotFactory
 from VolBot import VolBot
