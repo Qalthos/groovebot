@@ -60,10 +60,9 @@ class JlewBot(IRCClient):
 
 
 class JlewBotFactory(ReconnectingClientFactory):
-    protocol = JlewBot
     active_bot = None
 
-    def __init__(self, protocol=protocol):
+    def __init__(self, protocol=JlewBot):
         self.protocol = protocol
         self.channel = protocol.channel
         self.registered_commands = {}
