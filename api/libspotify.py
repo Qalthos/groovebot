@@ -20,26 +20,20 @@ import os
 import threading
 
 import spotify
-from spotify.audiosink import import_audio_sink
-from spotify.manager import SpotifySessionManager
 
 import util
 from twisted.internet import reactor, threads
 from twisted.internet.task import LoopingCall
 
-AudioSink = import_audio_sink((
-    ('spotify.audiosink.alsa', 'AlsaSink'),
-    ('spotify.audiosink.gstreamer', 'GstreamerSink'),
-))
-
-class SpotApi(SpotifySessionManager, threading.Thread):
+class SpotApi(object):
     appkey_file = os.path.join(os.path.dirname(__file__), 'spotify_appkey.key')
 
-    def __init__(self, *args, **kwargs):
-        SpotifySessionManager.__init__(self, *args, **kwargs)
-        threading.Thread.__init__(self)
+    def __init__(self, username, password):
+        config = spotify.Config()
+        config.load_application_key_file(self.appkey_file)
+        self.session = spotify.Session(config)
+        self.session.login(username, password)
 
-        self.__audio = AudioSink(backend=self)
         self.__state = 'stopped'
         self.__queue = collections.deque()
         self.__current_song = None
@@ -48,8 +42,27 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         self.__search_lock = threading.Condition()
         self.__skip_lock = threading.Lock()
         self.connected = threading.Event()
-        self.session = None
-        self.start()
+
+        def connection_state_listener(session):
+            if session.connection.state is spotify.ConnectionState.LOGGED_IN:
+                self.connected.set()
+
+        def playback_manager(session):
+            self.api_next()
+
+        audio = spotify.AlsaSink(self.session)
+        loop = spotify.EventLoop(self.session)
+        loop.start()
+        self.session.on(
+            spotify.SessionEvent.CONNECTION_STATE_UPDATED,
+            connection_state_listener
+        )
+        self.session.on(
+            spotify.SessionEvent.END_OF_TRACK,
+            playback_manager
+        )
+        self.connected.wait()
+        print('logged in')
 
     @property
     def queue(self):
@@ -75,12 +88,12 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         @return: A dictionary of metadata about the song.
         """
 
-        def search_callback(results, userdata):
+        def search_callback(results):
             # Pick up the lock so we only make one search at a time.
             with self.__search_lock:
-                print('we got %d match(es)' % results.total_tracks())
-                if results and results.total_tracks() > 0:
-                    self.__result.append(results.tracks()[0])
+                print('we got %d match(es)' % results.track_total)
+                if results and results.track_total > 0:
+                    self.__result.append(results.tracks[0])
                 else:
                     self.__result.append(None)
                     print('Error queueing song')
@@ -99,7 +112,8 @@ class SpotApi(SpotifySessionManager, threading.Thread):
             if not result:
                 # We couldn't get a song from the API, so let the bot know.
                 return None
-            result_id = str(spotify.Link.from_track(result))
+            result_id = str(result.link.uri)
+            self.session.player.prefetch(result)
             self.__song_db[result_id] = self.translate_song(result)
         return self.__song_db[result_id]
 
@@ -116,26 +130,28 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         with self.__skip_lock:
             if self.__state == 'stopped':
                 if self.__queue:
-                    track_link = spotify.Link.from_string(self.__queue.popleft())
-                    self.__play_song(track_link.as_track())
+                    track = self.session.get_track(self.__queue.popleft())
+                    self.__play_song(track)
 
     def translate_song(self, song):
         if not song:
             return dict()
-        return dict(SongID=str(spotify.Link.from_track(song)),
-                    SongName=util.asciify(song.name()),
-                    ArtistName=util.asciify(song.artists()[0].name()),
-                    AlbumName=util.asciify(song.album().name()),
-                    )
+        return dict(
+            SongID=str(song.link.uri),
+            SongName=util.asciify(song.name),
+            ArtistName=util.asciify(song.artists[0].name),
+            AlbumName=util.asciify(song.album.name),
+        )
 
     def queue_song(self, song_id):
         self.__queue.append(song_id)
         self.auto_play()
 
     def __play_song(self, song):
-        print('loading %s by %s on %s' % (song.name(), song.artists()[0],
-                                          song.album()))
-        self.session.load(song)
+        print('loading %s by %s on %s' % (song.name, song.artists[0],
+                                          song.album))
+        song.load()
+        self.session.player.load(song)
         self.__current_song = song
         self.api_play()
 
@@ -147,8 +163,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         """
         if not self.session or self.__state == 'paused':
             return
-        self.session.play(0)
-        self.__audio.pause()
+        self.session.player.pause()
         self.__state = 'paused'
 
     def api_play(self):
@@ -159,8 +174,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         """
         if not self.session or self.__state == 'playing':
             return
-        self.__audio.start()
-        self.session.play(1)
+        self.session.player.play()
         self.__state = 'playing'
 
     def api_play_pause(self):
@@ -177,10 +191,6 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         elif self.__state == 'paused' and self.__queue:
             self.api_play()
 
-    def next(self):
-        """Needed for audio backend management"""
-        self.api_next()
-
     def api_next(self):
         """
         Plays the next song in the queue
@@ -196,8 +206,7 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         """
         if not self.session:
             return
-        self.session.play(0)
-        self.__audio.stop()
+        self.session.player.pause()
         self.__state = 'stopped'
         self.__current_song = None
 
@@ -289,21 +298,3 @@ class SpotApi(SpotifySessionManager, threading.Thread):
         Coming soon.
         """
         raise NotImplementedError
-
-    # Overriden Methods
-    def run(self):
-        self.connect()
-
-    def logged_in(self, session, error):
-        if error:
-            print error
-            return
-        self.session = session
-        self.connected.set()
-        print('Logged in successfully')
-
-    def end_of_track(self, session):
-        self.__audio.end_of_track()
-
-    def music_delivery_safe(self, *args, **kwargs):
-        return self.__audio.music_delivery(*args, **kwargs)
