@@ -34,7 +34,7 @@ TIRED = ['lame']
 BLAME = ['blame']
 
 
-class MergeBot(VolBot):
+class GrooveBot(VolBot):
     bot_name = 'foss_groovebot'
     current_song = ''
     api_inst = None
@@ -221,7 +221,7 @@ def pick_backend(backend, factory):
 
 
 if __name__ == '__main__':
-    f = JlewBotFactory(protocol=MergeBot)
+    f = JlewBotFactory(protocol=GrooveBot)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    reactor.callLater(10, pick_backend, sys.argv[1], f)
+    reactor.callLater(1, pick_backend, sys.argv[1], f)
     reactor.run()
