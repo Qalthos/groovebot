@@ -119,7 +119,7 @@ class GrooveBot(VolBot):
             song_db = self.api_inst.song_db
             for song_id in self.api_inst.queue:
                 song = song_db[song_id]
-                self.msg(user, '%s' % self._display_name(song, album=True))
+                self.msg(user, '%s' % self._display_name(song, id_=True, album=True))
 
         elif command == "pause":
             threads.deferToThread(self.api_inst.api_pause).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
@@ -163,11 +163,16 @@ class GrooveBot(VolBot):
             self.api_inst.api_radio_tired()
             responder('Current song will not be played for a while.')
 
-    def _display_name(self, song, album=False, rating=True):
+    def _display_name(self, song, id_=False, album=False, rating=True):
         """Method to consistently output songs for each use."""
-        return '"%s" by %s%s%s' % (song['SongName'], song['ArtistName'],
-                                   ' on ' + song['AlbumName'] if album else '',
-                                   ' ' + song.get('Rating', '') if rating else '')
+        response = '{} by {}'.format(song['SongName'], song['ArtistName'])
+        if id_:
+            response = '{} {}'.format(song['SongID'], response)
+        if album:
+            response += ' on {}'.format(song['AlbumName'])
+        if rating:
+            response += ' {}'.format(song.get('Rating', ''))
+        return response
 
 
 def check_status(factory):
