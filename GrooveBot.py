@@ -109,7 +109,7 @@ class GrooveBot(VolBot):
             if msg:
                 song = msg
 
-            user = self.song_request_db.get(msg)
+            user = self.song_request_db.get(song)
             if not user:
                 responder('No song like that was queued by anyone')
             else:
