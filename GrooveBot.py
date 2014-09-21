@@ -119,7 +119,7 @@ class GrooveBot(VolBot):
             song_db = self.api_inst.song_db
             for song_id in self.api_inst.queue:
                 song = song_db[song_id]
-                responder('%s' % self._display_name(song, album=True))
+                self.msg(user, '%s' % self._display_name(song, album=True))
 
         elif command == "pause":
             threads.deferToThread(self.api_inst.api_pause).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
