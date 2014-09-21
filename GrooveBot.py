@@ -82,7 +82,8 @@ class GrooveBot(VolBot):
 
         elif command == "remove":
             if self.api_inst.remove_queue(msg):
-                responder('Removed %s' % msg)
+                song_pretty = self._display_name(self.api_inst.song_db[msg])
+                responder('Removed %s' % song_pretty)
             else:
                 responder('Could not remove %s' % msg)
 
@@ -91,7 +92,9 @@ class GrooveBot(VolBot):
             for song_id in queue:
                 if user == self.song_request_db[song_id]:
                     self.api_inst.remove_queue(song_id)
-                    responder('Removed %s' % song_id)
+                    song = self.api_inst.song_db[song_id]
+                    song_pretty = self._display_name(song)
+                    responder('Removed %s' % song_pretty)
                     break
             else:
                 responder('There was nothing to remove')
