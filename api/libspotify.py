@@ -28,11 +28,14 @@ from twisted.internet.task import LoopingCall
 class SpotApi(object):
     appkey_file = os.path.join(os.path.dirname(__file__), 'spotify_appkey.key')
 
-    def __init__(self, username, password):
+    def __init__(self, username='', password='', remember=True):
         config = spotify.Config()
         config.load_application_key_file(self.appkey_file)
         self.session = spotify.Session(config)
-        self.session.login(username, password)
+        if remember and not username:
+            self.session.relogin()
+        else:
+            self.session.login(username, password, remember_me=remember)
 
         self.__state = 'stopped'
         self.__queue = collections.deque()

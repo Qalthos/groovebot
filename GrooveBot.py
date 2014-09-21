@@ -216,12 +216,25 @@ def pick_backend(backend, factory):
         bot.quiet = QUEUE
 
         from api.libspotify import SpotApi
-        uname = raw_input('Enter your Spotify username: ').strip()
-        upass = getpass('Enter your Spotify password: ').strip()
-        if not (uname and upass):
-            reactor.stop()
-            return
-        api = SpotApi(uname, upass)
+        # Ask to login with saved credentials
+        remember = raw_input('Try to use saved credentials? [y]: ').strip()
+        if not remember or remember == 'y':
+            api = SpotApi(remember=True)
+
+        else:
+            # Get proper credentials
+            uname = raw_input('Enter your Spotify username: ').strip()
+            upass = getpass('Enter your Spotify password: ').strip()
+            remember = raw_input('Remember these credentials? [y]:  ').strip()
+            if not remember or remember == 'y':
+                remember = True
+            else:
+                remember = False
+            if not (uname and upass):
+                print('You must provide both a username and password')
+                reactor.stop()
+                return
+            api = SpotApi(uname, upass, remember=remember)
 
     bot.setup(factory, api)
     LoopingCall(check_status, factory).start(2).addErrback(util.err_console)
