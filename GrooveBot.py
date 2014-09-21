@@ -99,10 +99,12 @@ class GrooveBot(VolBot):
         elif command == "show":
             song_names = []
             song_db = self.api_inst.song_db
-            for song_id in self.api_inst.queue:
+            for song_id in self.api_inst.queue[:5]:
                 song = song_db[song_id]
                 song_names.append('%s' % self._display_name(song))
             responder(', '.join(song_names))
+            if len(self.api_inst.queue) > 5:
+                responder('call "dump" to see more')
 
         elif command == 'blame':
             song = self.api_inst.current_song['SongID']
