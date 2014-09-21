@@ -104,20 +104,28 @@ class SpotApi(object):
                 self.__search_lock.notify()
 
         self.connected.wait()
-        self.session.search(query, search_callback)
-        # Pick up the lock in case we get two searches at the same time
-        with self.__search_lock:
-            if not self.__result:
-                # If there's no results, we beat the callback, so wait for a
-                # notify()
-                self.__search_lock.wait()
-            result = self.__result.pop()
-            if not result:
-                # We couldn't get a song from the API, so let the bot know.
-                return None
-            result_id = str(result.link.uri)
-            self.session.player.prefetch(result)
-            self.__song_db[result_id] = self.translate_song(result)
+        # handle Spotify URIs directly
+        if query[:14] == 'spotify:track:':
+            result_id = query
+            result = self.session.get_track(query)
+            result.load()
+
+        else:
+            self.session.search(query, search_callback)
+            # Pick up the lock in case we get two searches at the same time
+            with self.__search_lock:
+                if not self.__result:
+                    # If there's no results, we beat the callback, so wait for a
+                    # notify()
+                    self.__search_lock.wait()
+                result = self.__result.pop()
+                if not result:
+                    # We couldn't get a song from the API, so let the bot know.
+                    return None
+                result_id = str(result.link.uri)
+
+        self.session.player.prefetch(result)
+        self.__song_db[result_id] = self.translate_song(result)
         return self.__song_db[result_id]
 
     def remove_queue(self, uri):
