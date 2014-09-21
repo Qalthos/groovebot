@@ -15,8 +15,7 @@
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from twisted.internet import reactor, threads, utils
-from twisted.internet.task import LoopingCall
+from twisted.internet import reactor, utils
 
 from JlewBot import JlewBotFactory, JlewBot
 import util

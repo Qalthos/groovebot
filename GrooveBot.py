@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 #    This file is part of GrooveBot.
 #
 #    GrooveBot is free software: you can redistribute it and/or modify
@@ -14,75 +14,65 @@
 #    You should have received a copy of the GNU General Public License
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
-from twisted.internet import reactor, threads, utils
-from twisted.internet.task import LoopingCall
+from getpass import getpass
+import sys
 
-from GrooveApi import GrooveApi
+from twisted.internet import reactor, threads
+from twisted.internet.task import LoopingCall
 
 from JlewBot import JlewBotFactory
 from VolBot import VolBot
 import util
 
 
-class GrooveBot(VolBot):
-    # Replace with proper locations
-    api_inst = GrooveApi('currentSong.txt', 'shortcutAction.txt')
+CONTROL = ['add', 'remove', 'oops']
+PLAYBACK = ['pause', 'resume']
+QUEUE = ['show', 'dump', 'status', 'skip']
+VOTE = ['vote']
+RADIO = ['radio']
+TIRED = ['lame']
+BLAME = ['blame']
 
-    bot_name = "foss_groovebot"
-    last_msg = ""
+
+class GrooveBot(VolBot):
+    bot_name = 'foss_groovebot'
+    current_song = ''
+    api_inst = None
     song_request_db = {}
 
-    def setup(self, f):
+    def setup(self, factory, api):
         # super() for classic classes:
-        VolBot.setup(self, f)
+        VolBot.setup(self, factory)
 
-        for command in ['add','remove','show','pause','resume','skip','status','dump','radio']:
-            f.register_command(command, self.request_queue_song)
+        for command in self.capabilities:
+            factory.register_command(command, self.request_queue_song)
+        self.api_inst = api
 
-    def _file_status(self, s, bot, channel):
-        if s:
-            msg = "%s: \"%s\" by \"%s\" on \"%s\"" % \
-                    (s['status'], s['title'], s['artist'], s['album'])
-
-            if s['status'] == 'stopped':
-                threads.deferToThread(self.api_inst.auto_play).addErrback(self.err_console)
-            global last_msg
-            last_msg = msg
-            bot.me( channel, msg )
-
-    def check_status(self, irc_bot, channel):
-        if hasattr(irc_bot, 'active_bot') and irc_bot.active_bot:
-            irc_bot = irc_bot.active_bot
-        else:
+    def playback_status(self):
+        self.api_inst.auto_play()
+        song = self.api_inst.current_song
+        if not song:
             return
-
-        threads.deferToThread(api_inst.get_file_status).addCallback(_file_status, irc_bot, channel).addErrback(self.err_console)
+        if not song['SongName'] == self.current_song:
+            self.current_song = song['SongName']
+            self.describe(self.channel, 'Playing %s' % self._display_name(song))
 
     def _add_lookup_cb(self, song, responder, user):
         if not song:
-            responder("API Threw Exception, try again")
-            return
-
-        if len(song) == 0:
-            responder("API returned empty set")
-
-        elif song['SongID'] in self.api_inst.played:
-            responder("Error \"%s\" by \"%s\" has been played" % (\
-                song['SongName'], song['ArtistName']))
+            responder("No songs found.")
 
         elif song['SongID'] in self.api_inst.queue:
-            responder('Error "%s" by "%s" is in queue' % (\
-                song['SongName'], song['ArtistName']))
+            responder('%s is already in queue' %
+                      self._display_name(song, rating=False))
         else:
-            responder('Queueing %s: "%s" by "%s" on "%s"' % (\
-                song['SongID'], song['SongName'],
-                song['ArtistName'], song['AlbumName']))
+            responder('Queueing %s: %s' % (song['SongID'],
+                                    self._display_name(song, album=True)))
             self.song_request_db[song['SongID']] = user
             threads.deferToThread(self.api_inst.queue_song, song['SongID']) \
                    .addErrback(util.err_chat, responder)
 
     def request_queue_song(self, responder, user, channel, command, msg):
-        if channel == self.bot_name and command not in ['show', 'dump', 'status', 'vol']:
+        if channel == self.bot_name and command not in self.quiet:
             responder("Let's talk to the class")
             return
 
@@ -91,31 +81,50 @@ class GrooveBot(VolBot):
             threads.deferToThread(self.api_inst.request_song_from_api, msg).addCallback(self._add_lookup_cb, responder, user).addErrback(util.err_chat, responder)
 
         elif command == "remove":
-            try:
-                id = int(msg)
-                if self.api_inst.remove_queue(id):
-                    responder("Removed %s" % id)
-                else:
-                    responder( "Could not remove %s" % msg )
+            if self.api_inst.remove_queue(msg):
+                song_pretty = self._display_name(self.api_inst.song_db[msg])
+                responder('Removed %s' % song_pretty)
+            else:
+                responder('Could not remove %s' % msg)
 
-            except:
-                responder( "Must get an id" )
+        elif command == "oops":
+            queue = reversed(self.api_inst.queue)
+            for song_id in queue:
+                if user == self.song_request_db[song_id]:
+                    self.api_inst.remove_queue(song_id)
+                    song = self.api_inst.song_db[song_id]
+                    song_pretty = self._display_name(song)
+                    responder('Removed %s' % song_pretty)
+                    break
+            else:
+                responder('There was nothing to remove')
 
         elif command == "show":
-            songNames = []
+            song_names = []
             song_db = self.api_inst.song_db
-            for song_id in self.api_inst.queue:
+            for song_id in self.api_inst.queue[:5]:
                 song = song_db[song_id]
-                songNames.append('"%s" by "%s"' %(song['SongName'], song['ArtistName']))
-            responder(', '.join(songNames))
+                song_names.append('%s' % self._display_name(song))
+            responder(', '.join(song_names))
+            if len(self.api_inst.queue) > 5:
+                responder('call "dump" to see more')
+
+        elif command == 'blame':
+            song = self.api_inst.current_song['SongID']
+            if msg:
+                song = msg
+
+            user = self.song_request_db.get(song)
+            if not user:
+                responder('No song like that was queued by anyone')
+            else:
+                responder('You can blame %s for that song.' % user)
 
         elif command == "dump":
             song_db = self.api_inst.song_db
             for song_id in self.api_inst.queue:
                 song = song_db[song_id]
-                responder( '%d [%s]: "%s" by "%s" on "%s"' % ( id,
-                    self.song_request_db[song_id], song['SongName'],
-                    song['ArtistName'], song['AlbumName']))
+                self.msg(user, '%s' % self._display_name(song, id_=True, album=True))
 
         elif command == "pause":
             threads.deferToThread(self.api_inst.api_pause).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
@@ -133,13 +142,109 @@ class GrooveBot(VolBot):
                 threads.deferToThread(self.api_inst.api_radio_off).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
 
         elif command == "status":
-            responder(last_msg)
+            song = self.api_inst.current_song
+            if song:
+                responder('%s' % self._display_name(song))
+            else:
+                responder("No song playing.")
+
+        elif command == 'vote':
+            if msg == 'up':
+                self.api_inst.api_radio_vote_up()
+            elif msg == 'down':
+                self.api_inst.api_radio_vote_down()
+
+            vote = self.api_inst.api_radio_get_vote()
+            if not vote:
+                responder('Current song has not been voted on')
+            else:
+                if vote == 'love':
+                    vote = 'up'
+                elif vote == 'ban':
+                    vote = 'down'
+                responder('Current song has been voted %s' % vote)
+
+        elif command == 'lame':
+            self.api_inst.api_radio_tired()
+            responder('Current song will not be played for a while.')
+
+    def _display_name(self, song, id_=False, album=False, rating=True):
+        """Method to consistently output songs for each use."""
+        response = '{} by {}'.format(song['SongName'], song['ArtistName'])
+        if id_:
+            response = '{} {}'.format(song['SongID'], response)
+        if album:
+            response += ' on {}'.format(song['AlbumName'])
+        if rating:
+            response += ' {}'.format(song.get('Rating', ''))
+        return response
+
+
+def check_status(factory):
+    if factory.active_bot:
+        threads.deferToThread(factory.active_bot.playback_status) \
+               .addErrback(util.err_console)
+
+
+def pick_backend(backend, factory):
+    while not factory.active_bot:
+        print('Not ready yet.')
+        reactor.callLater(2, pick_backend, backend, factory)
+        return
+
+    bot = factory.active_bot
+
+    if backend == 'mpd':
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL
+        bot.quiet = QUEUE
+
+        from api.mpd_wrapper import MPDApi
+        api = MPDApi()
+
+    elif backend == 'pandora':
+        bot.capabilities = QUEUE + PLAYBACK + VOTE + TIRED
+        bot.quiet = QUEUE
+
+        from api.pandora import PandApi
+        uname = raw_input('Enter your Pandora username: ').strip()
+        upass = getpass('Enter your Pandora password: ').strip()
+        station = raw_input('Which station would you like to connect to: ').strip()
+        if not (uname and upass and station):
+            reactor.stop()
+            return
+        api = PandApi(uname, upass, station)
+
+    elif backend == 'spotify':
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL + BLAME
+        bot.quiet = QUEUE
+
+        from api.libspotify import SpotApi
+        # Ask to login with saved credentials
+        remember = raw_input('Try to use saved credentials? [y]: ').strip()
+        if not remember or remember == 'y':
+            api = SpotApi(remember=True)
+
+        else:
+            # Get proper credentials
+            uname = raw_input('Enter your Spotify username: ').strip()
+            upass = getpass('Enter your Spotify password: ').strip()
+            remember = raw_input('Remember these credentials? [y]:  ').strip()
+            if not remember or remember == 'y':
+                remember = True
+            else:
+                remember = False
+            if not (uname and upass):
+                print('You must provide both a username and password')
+                reactor.stop()
+                return
+            api = SpotApi(uname, upass, remember=remember)
+
+    bot.setup(factory, api)
+    LoopingCall(check_status, factory).start(2).addErrback(util.err_console)
 
 
 if __name__ == '__main__':
-    bot = GrooveBot()
     f = JlewBotFactory(protocol=GrooveBot)
-    bot.setup(f)
     reactor.connectTCP("irc.freenode.net", 6667, f)
-    lc = LoopingCall(check_status, f, "#rit-groove").start( 2 )
+    reactor.callLater(1, pick_backend, sys.argv[1], f)
     reactor.run()
