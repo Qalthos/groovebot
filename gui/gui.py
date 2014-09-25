@@ -7,7 +7,7 @@ class GrooveGui:
     def __init__(self):
         # Set the Glade file
         self.builder = gtk.Builder()
-        self.builder.add_from_file("client.glade")
+        self.builder.add_from_file("gui/client.glade")
         
         dic = {"action": self.action,
             "request": self.request,

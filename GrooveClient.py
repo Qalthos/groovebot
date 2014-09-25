@@ -5,8 +5,7 @@ gtk2reactor.install()
 
 from twisted.internet import reactor
 
-from gui import GrooveGui
-from bot import GrooveClient, GrooveClientFactory
+from gui import GrooveGui, GrooveClient, GrooveClientFactory
 
 
 if __name__ == "__main__":
