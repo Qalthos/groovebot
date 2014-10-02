@@ -51,6 +51,7 @@ class GrooveBot(VolBot):
 
         for command in self.capabilities:
             factory.register_command(command, self.request_queue_song)
+        api.register_next_func(self._playback_cb)
         self.api_inst = api
 
     def _add_lookup_cb(self, song, responder, user):
@@ -65,7 +66,7 @@ class GrooveBot(VolBot):
             if not self.status == 'playing':
                 self._playback_cb()
 
-    def _playback_cb(self):
+    def _playback_cb(self, *args, **kwargs):
         """Called when playback is finished."""
         if not self.song_queue:
             return

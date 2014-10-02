@@ -56,14 +56,18 @@ class SpotApi(object):
             spotify.SessionEvent.CONNECTION_STATE_UPDATED,
             connection_state_listener
         )
-        self.session.on(
-            spotify.SessionEvent.END_OF_TRACK,
-            playback_manager
-        )
         self.connected.wait()
         print('logged in')
 
+    def register_next_func(self, func):
+        self.session.on(
+            spotify.SessionEvent.END_OF_TRACK,
+            func
+        )
 
+    def lookup(self, uri):
+        track = self.session.get_track(uri)
+        return self.translate_song(track)
 
     def request_song_from_api(self, query):
         """
