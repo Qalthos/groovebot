@@ -107,7 +107,7 @@ class GrooveBot(VolBot):
 
         elif command == "show":
             song_names = [
-                self._display_name(self.song_db[song_id]))
+                self._display_name(self.api_inst.lookup(song_id))
                 for song_id in self.song_queue[:5]
             ]
             responder(', '.join(song_names))
@@ -127,7 +127,7 @@ class GrooveBot(VolBot):
 
         elif command == "dump":
             for song_id in self.song_queue:
-                song = self.song_db[song_id]
+                song = self.api_inst.lookup(song_id)
                 self.msg(user, '%s' % self._display_name(song, id_=True, album=True))
 
         elif command == "pause":
@@ -151,7 +151,8 @@ class GrooveBot(VolBot):
 
         elif command == "status":
             if self.current_song:
-                responder('{}: {}'.format(self.status, self._display_name(song)))
+                display = self._display_name(self.api_inst.lookup(self.current_song))
+                responder('{}: {}'.format(self.status, display))
             else:
                 responder("No song playing.")
 
