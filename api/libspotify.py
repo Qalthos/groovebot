@@ -37,10 +37,6 @@ class SpotApi(object):
         else:
             self.session.login(username, password, remember_me=remember)
 
-        self.__state = 'stopped'
-        self.__queue = collections.deque()
-        self.__current_song = None
-        self.__song_db = {}
         self.__result = []
         self.__search_lock = threading.Condition()
         self.__skip_lock = threading.Lock()
@@ -67,20 +63,7 @@ class SpotApi(object):
         self.connected.wait()
         print('logged in')
 
-    @property
-    def queue(self):
-        return list(self.__queue)
 
-    @property
-    def current_song(self):
-        if self.__current_song:
-            return self.translate_song(self.__current_song)
-        else:
-            return dict()
-
-    @property
-    def song_db(self):
-        return self.__song_db.copy()
 
     def request_song_from_api(self, query):
         """
@@ -125,15 +108,7 @@ class SpotApi(object):
                 result_id = str(result.link.uri)
 
         self.session.player.prefetch(result)
-        self.__song_db[result_id] = self.translate_song(result)
-        return self.__song_db[result_id]
-
-    def remove_queue(self, uri):
-        try:
-            self.__queue.remove(uri)
-            return True
-        except:
-            return False
+        return self.translate_song(result)
 
     def auto_play(self):
         # While not the most elegant solution, this will allow only one thread
@@ -142,7 +117,7 @@ class SpotApi(object):
             if self.__state == 'stopped':
                 if self.__queue:
                     track = self.session.get_track(self.__queue.popleft())
-                    self.__play_song(track)
+                    self.play_song(track)
 
     def translate_song(self, song):
         if not song:
@@ -154,16 +129,11 @@ class SpotApi(object):
             AlbumName=util.asciify(song.album.name),
         )
 
-    def queue_song(self, song_id):
-        self.__queue.append(song_id)
-        self.auto_play()
-
-    def __play_song(self, song):
-        print('loading %s by %s on %s' % (song.name, song.artists[0],
-                                          song.album))
+    def play_song(self, song_uri):
+        song = self.session.get_track(song_uri)
+        print('loading %s by %s on %s' % (song.name, song.artists[0], song.album))
         song.load()
         self.session.player.load(song)
-        self.__current_song = song
         self.api_play()
 
     ###### API CALLS #######
@@ -172,10 +142,7 @@ class SpotApi(object):
         Pauses the current song
         Does nothing if no song is playing
         """
-        if not self.session or self.__state == 'paused':
-            return
         self.session.player.pause()
-        self.__state = 'paused'
 
     def api_play(self):
         """
@@ -183,24 +150,7 @@ class SpotApi(object):
         If the current song is paused it resumes the song
         If no songs are in the queue, it does nothing
         """
-        if not self.session or self.__state == 'playing':
-            return
         self.session.player.play()
-        self.__state = 'playing'
-
-    def api_play_pause(self):
-        """
-        Toggles between paused and playing
-        Scenarios of current song
-        Not Playing: Plays the song
-        Paused: Resumes playback
-        Playing: Pauses song
-        If no songs are in the queue, it does nothing
-        """
-        if self.__state == 'playing':
-            self.api_pause()
-        elif self.__state == 'paused' and self.__queue:
-            self.api_play()
 
     def api_next(self):
         """
@@ -218,8 +168,6 @@ class SpotApi(object):
         if not self.session:
             return
         self.session.player.pause()
-        self.__state = 'stopped'
-        self.__current_song = None
 
     def api_previous(self):
         """
