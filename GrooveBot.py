@@ -106,17 +106,16 @@ class GrooveBot(VolBot):
                 responder('There was nothing to remove')
 
         elif command == "show":
-            song_names = []
-            song_db = self.api_inst.song_db
-            for song_id in self.api_inst.queue[:5]:
-                song = song_db[song_id]
-                song_names.append('%s' % self._display_name(song))
+            song_names = [
+                self._display_name(self.song_db[song_id]))
+                for song_id in self.song_queue[:5]
+            ]
             responder(', '.join(song_names))
-            if len(self.api_inst.queue) > 5:
+            if len(self.song_queue) > 5:
                 responder('call "dump" to see more')
 
         elif command == 'blame':
-            song = self.api_inst.current_song['SongID']
+            song = self.current_song
             if msg:
                 song = msg
 
@@ -127,9 +126,8 @@ class GrooveBot(VolBot):
                 responder('You can blame %s for that song.' % user)
 
         elif command == "dump":
-            song_db = self.api_inst.song_db
-            for song_id in self.api_inst.queue:
-                song = song_db[song_id]
+            for song_id in self.song_queue:
+                song = self.song_db[song_id]
                 self.msg(user, '%s' % self._display_name(song, id_=True, album=True))
 
         elif command == "pause":
@@ -141,7 +139,9 @@ class GrooveBot(VolBot):
             threads.deferToThread(self.api_inst.api_play).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
 
         elif command == "skip":
-            threads.deferToThread(self.api_inst.api_next).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
+            self.status = 'stopped'
+            self.current_song = ''
+            self._playback_cb()
 
         elif command == "radio":
             if msg == "on":
@@ -150,9 +150,8 @@ class GrooveBot(VolBot):
                 threads.deferToThread(self.api_inst.api_radio_off).addCallback(util.ok, responder).addErrback(util.err_chat, responder)
 
         elif command == "status":
-            song = self.api_inst.current_song
-            if song:
-                responder('%s' % self._display_name(song))
+            if self.current_song:
+                responder('{}: {}'.format(self.status, self._display_name(song)))
             else:
                 responder("No song playing.")
 
