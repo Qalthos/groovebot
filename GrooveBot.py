@@ -106,10 +106,13 @@ class GrooveBot(VolBot):
                 responder('There was nothing to remove')
 
         elif command == "show":
+            # song_queue is a deque, so slices are type Slice, which do not play
+            # well with comprehensions. This should only be an issue for
+            # extremely long queues
             song_names = [
                 self._display_name(self.api_inst.lookup(song_id))
-                for song_id in self.song_queue[:5]
-            ]
+                for song_id in self.song_queue
+            ][:5]
             responder(', '.join(song_names))
             if len(self.song_queue) > 5:
                 responder('call "dump" to see more')
