@@ -70,6 +70,8 @@ class GrooveBot(VolBot):
             self.song_queue.append(song['SongID'])
             if self.status == 'stopped':
                 self._playback_cb()
+            else:
+                self.__flush_state()
 
     def _playback_cb(self, *args, **kwargs):
         """Called whenever a new song might be wanted"""
@@ -80,6 +82,7 @@ class GrooveBot(VolBot):
         self.api_inst.play_song(self.current_song)
         song = self.api_inst.lookup(self.current_song)
         self.describe(self.channel, 'Playing %s' % self._display_name(song))
+        self.__flush_state()
 
     def request_queue_song(self, responder, user, channel, command, msg):
         if channel == self.bot_name and command not in self.quiet:
@@ -93,6 +96,7 @@ class GrooveBot(VolBot):
         elif command == "remove":
             try:
                 self.song_queue.remove(msg)
+                self.__flush_state()
                 song = self.api_inst.lookup(msg)
                 song_pretty = self._display_name(song)
                 responder('Removed %s' % song_pretty)
@@ -103,6 +107,7 @@ class GrooveBot(VolBot):
             for song_id in reversed(self.song_queue):
                 if user == self.song_request_db[song_id]:
                     self.song_queue.remove(song_id)
+                    self.__flush_state()
                     song = self.api_inst.lookup(song_id)
                     song_pretty = self._display_name(song)
                     responder('Removed %s' % song_pretty)
@@ -150,6 +155,7 @@ class GrooveBot(VolBot):
             self.status = 'stopped'
             self.current_song = ''
             self._playback_cb()
+            self.__flush_state()
 
         elif command == "radio":
             if msg == "on":
@@ -194,6 +200,16 @@ class GrooveBot(VolBot):
         if rating:
             response += ' {}'.format(song.get('Rating', ''))
         return response
+
+    def __flush_state(self):
+        self.persistent_store['requests'] = self.song_request_db
+        # Push the current song to the front so it will be restored and
+        # restarted.
+        queue_copy = self.song_queue.__copy__()
+        queue_copy.appendleft(self.current_song)
+        self.persistent_store['queue'] = queue_copy
+        # Just in case
+        self.persistent_store.sync()
 
 
 def pick_backend(backend, factory):
