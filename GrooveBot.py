@@ -37,6 +37,7 @@ BLAME = ['blame']
 
 class GrooveBot(VolBot):
     bot_name = 'foss_groovebot'
+    # Valid values are 'stopped', 'playing', and 'paused'
     status = 'stopped'
     current_song = ''
     api_inst = None
@@ -63,12 +64,12 @@ class GrooveBot(VolBot):
             responder('Queueing %s' % (self._display_name(song, id_=True, album=True)))
             self.song_request_db[song['SongID']] = user
             self.song_queue.append(song['SongID'])
-            if not self.status == 'playing':
+            if self.status == 'stopped':
                 self._playback_cb()
 
     def _playback_cb(self, *args, **kwargs):
-        """Called when playback is finished."""
-        if not self.song_queue:
+        """Called whenever a new song might be wanted"""
+        if self.status == 'paused' or not self.song_queue:
             return
         self.status = 'playing'
         self.current_song = self.song_queue.popleft()
