@@ -15,6 +15,7 @@
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import deque
+import shelve
 import sys
 
 from twisted.internet import reactor, threads
@@ -41,19 +42,23 @@ class GrooveBot(VolBot):
     current_song = ''
     api_inst = None
 
-    # collections of seen and unplayed songs
-    song_request_db = {}
-    song_queue = deque()
-
     def setup(self, factory, api):
         # super() for classic classes:
         VolBot.setup(self, factory)
+
+        # Restore state
+        self.persistent_store = shelve.open('state.db')
+        self.song_request_db = self.persistent_store.get('requests', dict())
+        self.song_queue = self.persistent_store.get('queue', deque())
 
         for command in self.capabilities:
             factory.register_command(command, self.request_queue_song)
         api.register_next_func(self._playback_cb)
         self.api_inst = api
+        # Try to play a song if we've loaded one
+        self._playback_cb()
 
+    # State-based callbacks
     def _add_lookup_cb(self, song, responder, user):
         if not song:
             responder("No songs found.")
