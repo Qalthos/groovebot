@@ -15,6 +15,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
+from getpass import getpass
 import collections
 import os
 import threading
@@ -28,14 +29,11 @@ from twisted.internet.task import LoopingCall
 class SpotApi(object):
     appkey_file = os.path.join(os.path.dirname(__file__), 'spotify_appkey.key')
 
-    def __init__(self, username='', password='', remember=True):
+    def __init__(self):
         config = spotify.Config()
         config.load_application_key_file(self.appkey_file)
         self.session = spotify.Session(config)
-        if remember and not username:
-            self.session.relogin()
-        else:
-            self.session.login(username, password, remember_me=remember)
+        self.login()
 
         self.__result = []
         self.__search_lock = threading.Condition()
@@ -58,6 +56,30 @@ class SpotApi(object):
         )
         self.connected.wait()
         print('logged in')
+
+    def login(self):
+        # Ask to login with saved credentials
+        remember = raw_input('Try to use saved credentials? [y]: ').strip()
+        if not remember or remember == 'y':
+            try:
+                self.session.relogin()
+                return
+            except spotify.error.LibError:
+                print('No credentials saved!')
+
+        # Get proper credentials
+        uname = raw_input('Enter your Spotify username: ').strip()
+        upass = getpass('Enter your Spotify password: ').strip()
+        remember = raw_input('Remember these credentials? [y]: ').strip()
+        if not remember or remember == 'y':
+            remember = True
+        else:
+            remember = False
+        if not (uname and upass):
+            print('You must provide both a username and password')
+            reactor.stop()
+            return
+        self.session.login(username, password, remember_me=remember)
 
     def register_next_func(self, func):
         self.session.on(
