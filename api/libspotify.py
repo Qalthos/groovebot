@@ -136,18 +136,10 @@ class SpotApi(object):
         self.session.player.prefetch(result)
         return self.translate_song(result)
 
-    def auto_play(self):
-        # While not the most elegant solution, this will allow only one thread
-        # at a time to attempt to skip to the next song in the queue.
-        with self.__skip_lock:
-            if self.__state == 'stopped':
-                if self.__queue:
-                    track = self.session.get_track(self.__queue.popleft())
-                    self.play_song(track)
-
     def translate_song(self, song):
         if not song:
             return dict()
+        track.load()
         return dict(
             SongID=str(song.link.uri),
             SongName=util.asciify(song.name),
@@ -157,8 +149,8 @@ class SpotApi(object):
 
     def play_song(self, song_uri):
         song = self.session.get_track(song_uri)
-        print('loading %s by %s on %s' % (song.name, song.artists[0], song.album))
         song.load()
+        print('loading %s by %s on %s' % (song.name, song.artists[0], song.album))
         self.session.player.load(song)
         self.api_play()
 
