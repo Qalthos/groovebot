@@ -139,7 +139,7 @@ class SpotApi(object):
     def translate_song(self, song):
         if not song:
             return dict()
-        track.load()
+        song.load()
         return dict(
             SongID=str(song.link.uri),
             SongName=util.asciify(song.name),
