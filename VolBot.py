@@ -24,7 +24,7 @@ class VolBot(JlewBot):
     bot_name = "foss_volbot"
     channel = "#rit-groove"
     versionNum = 1.3
-    sourceURL = "https://gitorious.org/jlew/groovebot"
+    sourceURL = "https://github.com/Qalthos/groovebot"
     vol_step = 5
     vol = 50
 
