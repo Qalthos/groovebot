@@ -1,6 +1,9 @@
 import gst
 
 class GstPlayerAPI(object):
+
+    __next_func = lambda: None
+
     def __init__(self):
         self.__player = gst.element_factory_make('playbin2', 'player')
         bus = self.__player.get_bus()
@@ -26,6 +29,10 @@ class GstPlayerAPI(object):
             return
 
         self.api_stop()
+        self.__next_func()
+
+    def register_next_func(self, func):
+        self.__next_func = func
 
     def play_song(self, uri):
         self.__player.set_property("uri", uri)
