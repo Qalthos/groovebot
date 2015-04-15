@@ -20,7 +20,6 @@ import shelve
 import sys
 
 from twisted.internet import reactor, threads
-from twisted.internet.task import LoopingCall
 
 from JlewBot import JlewBotFactory
 from VolBot import VolBot

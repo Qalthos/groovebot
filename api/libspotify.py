@@ -16,15 +16,13 @@
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
 from getpass import getpass
-import collections
 import os
 import threading
 
 import spotify
 
 import util
-from twisted.internet import reactor, threads
-from twisted.internet.task import LoopingCall
+from twisted.internet import reactor
 
 class SpotApi(object):
     appkey_file = os.path.join(os.path.dirname(__file__), 'spotify_appkey.key')
