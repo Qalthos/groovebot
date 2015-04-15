@@ -15,6 +15,7 @@
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
 from collections import deque
+from getpass import getpass
 import shelve
 import sys
 
