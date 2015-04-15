@@ -24,7 +24,7 @@ class SoundCloudAPI(GstPlayerAPI):
 
     def __init__(self):
         super(SoundCloudAPI, self).__init__()
-        self.client = soundcloud.Client(client_d=self.client_id)
+        self.client = soundcloud.Client(client_id=self.client_id)
 
     def lookup(self, uri):
         raise NotImplementedError
