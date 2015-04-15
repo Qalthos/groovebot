@@ -18,14 +18,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
-import gst
-
 from pithos.pandora.pandora import Pandora, RATE_BAN, RATE_LOVE
 
+from api import GstPlayerAPI
 import util
 
-class PandApi:
+class PandApi(GstPlayerAPI):
     def __init__(self, uname, upass, station_name):
+        super(PandApi, self).__init__()
         self.__last_mode = 'stopped'
         self.__current = None
 
@@ -44,31 +44,6 @@ class PandApi:
         self.__station = self.__api.get_station_by_id(station_id)
         self.__queue = self.__station.get_playlist()
 
-        self.__player = gst.element_factory_make("playbin2", "player")
-        bus = self.__player.get_bus()
-        bus.add_signal_watch()
-        bus.connect("message", self.on_message)
-
-    def on_message(self, bus, message):
-        t = message.type
-        if t == gst.MESSAGE_EOS:
-            print("End of song")
-        elif t == gst.MESSAGE_ERROR:
-            err, debug = message.parse_error()
-            print "Error: %s" % err, debug
-        elif t in [gst.MESSAGE_ELEMENT, gst.MESSAGE_DURATION, gst.MESSAGE_TAG,
-                   gst.MESSAGE_STATE_CHANGED, gst.MESSAGE_STREAM_STATUS,
-                   gst.MESSAGE_BUFFERING, gst.MESSAGE_NEW_CLOCK,
-                   gst.MESSAGE_ASYNC_DONE]:
-            # Ignore the message
-            return
-        else:
-            print(t)
-            print(message)
-            return
-
-        self.api_stop()
-
     @property
     def song_db(self):
         db = dict()
@@ -86,11 +61,6 @@ class PandApi:
         if self.__current:
             return self.translate_song(self.__current)
         return dict()
-
-    def play_song(self, uri):
-        self.__player.set_property("uri", uri)
-        self.__player.set_state(gst.STATE_PLAYING)
-        self.__last_mode = 'playing'
 
     def auto_play(self):
         bus = self.__player.get_bus()
@@ -112,57 +82,6 @@ class PandApi:
                            ':(' if song.rating==RATE_BAN else ':|')
 
     ###### API CALLS #######
-    def api_pause(self):
-        """
-        Pauses the current song
-        Does nothing if no song is playing
-        """
-        self.__player.set_state(gst.STATE_PAUSED)
-        self.__last_mode = 'paused'
-
-    def api_play(self):
-        """
-        Plays the current song
-        If the current song is paused it resumes the song
-        If no songs are in the queue, it does nothing
-        """
-        if self.__last_mode == 'paused':
-            self.__player.set_state(gst.STATE_PLAYING)
-            self.__last_mode = 'playing'
-        else:
-            self.auto_play()
-
-    def api_play_pause(self):
-        """
-        Toggles between paused and playing
-        Scenarios of current song
-        Not Playing: Plays the song
-        Paused: Resumes playback
-        Playing: Pauses song
-        If no songs are in the queue, it does nothing
-        """
-        if self.__last_mode == 'playing':
-            self.api_pause()
-        elif self.__last_mode == 'paused' or not len(self.__queue) == 0:
-            self.api_play()
-
-    def api_next(self):
-        """
-        Plays the next song in the queue
-        If no songs are left it does nothing
-        """
-        self.api_stop()
-        self.auto_play()
-
-    def api_stop(self):
-        """
-        Stops playback
-        If no songs are in the queue, it does nothing
-        """
-        self.__player.set_state(gst.STATE_NULL)
-        self.__last_mode = 'stopped'
-        self.__current = None
-
     def api_previous(self):
         """
         Plays the previous song in the queue
@@ -177,22 +96,6 @@ class PandApi:
         """
         Behaves like previous except it will ALWAYS play the
         previous song.
-        """
-        raise NotImplementedError
-
-    def api_volume_up(self):
-        """
-        Increases the volume by 20%
-        If the volume is >100% it will do nothing
-        If the volume is 0 it will set the volume to 10%
-        """
-        raise NotImplementedError
-
-    def api_volume_down(self):
-        """
-        Decreases the volume by 20%
-        Will continue to go to 0 indefinitely.
-        Requires version: v2.0 r20100518.2
         """
         raise NotImplementedError
 

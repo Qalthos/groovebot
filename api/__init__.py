@@ -27,6 +27,10 @@ class GstPlayerAPI(object):
 
         self.api_stop()
 
+    def play_song(self, uri):
+        self.__player.set_property("uri", uri)
+        self.__player.set_state(gst.STATE_PLAYING)
+
     def auto_play(self):
         bus = self.__player.get_bus()
         while bus.have_pending():
