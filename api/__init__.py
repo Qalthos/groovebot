@@ -1,3 +1,4 @@
+from twisted.internet.task import LoopingCall
 import gst
 
 class GstPlayerAPI(object):
@@ -9,6 +10,9 @@ class GstPlayerAPI(object):
         bus = self.__player.get_bus()
         bus.add_signal_watch()
         bus.connect('message', self.on_message)
+
+        lc = LoopingCall(self.get_messages)
+        lc.start(1)
 
     def on_message(self, bus, message):
         t = message.type
@@ -30,6 +34,11 @@ class GstPlayerAPI(object):
 
         self.api_stop()
         self.__next_func()
+
+    def get_messages(self):
+        bus = self.__player.get_bus()
+        while bus.have_pending():
+            self.on_message(bus, bus.pop())
 
     def register_next_func(self, func):
         self.__next_func = func
