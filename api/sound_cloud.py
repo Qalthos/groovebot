@@ -18,6 +18,7 @@
 import soundcloud
 
 from api import GstPlayerAPI
+import util
 
 class SoundCloudAPI(GstPlayerAPI):
     client_id = "REPLACE-ME"
@@ -37,10 +38,21 @@ class SoundCloudAPI(GstPlayerAPI):
 
         @return: A dictionary of metadata about the song.
         """
-        raise NotImplementedError
+        tracks = self.client.get('/tracks', q=query)
+        for track in tracks:
+            if track.streamable:
+                return self.translate_song(tracks[0])
 
     def translate_song(self, song):
-        raise NotImplementedError
+        if not song:
+            return dict()
+        return dict(
+            SongID=song.id,
+            SongName=util.asciify(song.title),
+            ArtistName=util.asciify(song.user['username']),
+            AlbumName='SoundCloud',
+            stream_url=self.client.get(song.stream_url, allow_redirects=False),
+        )
 
     ###### API CALLS #######
     def api_previous(self):
