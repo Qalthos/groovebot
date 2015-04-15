@@ -32,7 +32,6 @@ class GstPlayerAPI(object):
             print(message)
             return
 
-        self.api_stop()
         self.__next_func()
 
     def get_messages(self):
@@ -44,6 +43,7 @@ class GstPlayerAPI(object):
         self.__next_func = func
 
     def play_song(self, uri):
+        self.api_stop()
         self.__player.set_property("uri", uri)
         self.__player.set_state(gst.STATE_PLAYING)
 
