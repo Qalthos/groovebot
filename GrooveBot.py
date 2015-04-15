@@ -247,6 +247,13 @@ def pick_backend(backend, factory):
         from api.libspotify import SpotApi
         api = SpotApi()
 
+    elif backend == 'soundcloud':
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL + BLAME
+        bot.quiet = QUEUE
+
+        from api.sound_cloud import SoundCloudAPI
+        api = SoundCloudAPI()
+
     bot.setup(factory, api)
 
 
