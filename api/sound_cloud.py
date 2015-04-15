@@ -32,6 +32,10 @@ class SoundCloudAPI(GstPlayerAPI):
         track = self.client.get('/tracks/{}'.format(song_id))
         return self.translate_song(track)
 
+    def play_song(self, song_id):
+        track = self.lookup(song_id)
+        super(SoundCloudAPI, self).play_song(track['stream_url'].location)
+
     def request_song_from_api(self, query):
         """
         Send a search query to the API.
