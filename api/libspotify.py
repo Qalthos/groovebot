@@ -15,32 +15,24 @@
 #    You should have received a copy of the GNU General Public License
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
-import collections
+from getpass import getpass
 import os
 import threading
 
 import spotify
 
 import util
-from twisted.internet import reactor, threads
-from twisted.internet.task import LoopingCall
+from twisted.internet import reactor
 
 class SpotApi(object):
     appkey_file = os.path.join(os.path.dirname(__file__), 'spotify_appkey.key')
 
-    def __init__(self, username='', password='', remember=True):
+    def __init__(self):
         config = spotify.Config()
         config.load_application_key_file(self.appkey_file)
         self.session = spotify.Session(config)
-        if remember and not username:
-            self.session.relogin()
-        else:
-            self.session.login(username, password, remember_me=remember)
+        self.login()
 
-        self.__state = 'stopped'
-        self.__queue = collections.deque()
-        self.__current_song = None
-        self.__song_db = {}
         self.__result = []
         self.__search_lock = threading.Condition()
         self.__skip_lock = threading.Lock()
@@ -60,27 +52,42 @@ class SpotApi(object):
             spotify.SessionEvent.CONNECTION_STATE_UPDATED,
             connection_state_listener
         )
-        self.session.on(
-            spotify.SessionEvent.END_OF_TRACK,
-            playback_manager
-        )
         self.connected.wait()
         print('logged in')
 
-    @property
-    def queue(self):
-        return list(self.__queue)
+    def login(self):
+        # Ask to login with saved credentials
+        remember = raw_input('Try to use saved credentials? [y]: ').strip()
+        if not remember or remember == 'y':
+            try:
+                self.session.relogin()
+                return
+            except spotify.error.LibError:
+                print('No credentials saved!')
 
-    @property
-    def current_song(self):
-        if self.__current_song:
-            return self.translate_song(self.__current_song)
+        # Get proper credentials
+        uname = raw_input('Enter your Spotify username: ').strip()
+        upass = getpass('Enter your Spotify password: ').strip()
+        remember = raw_input('Remember these credentials? [y]: ').strip()
+        if not remember or remember == 'y':
+            remember = True
         else:
-            return dict()
+            remember = False
+        if not (uname and upass):
+            print('You must provide both a username and password')
+            reactor.stop()
+            return
+        self.session.login(uname, upass, remember_me=remember)
 
-    @property
-    def song_db(self):
-        return self.__song_db.copy()
+    def register_next_func(self, func):
+        self.session.on(
+            spotify.SessionEvent.END_OF_TRACK,
+            func
+        )
+
+    def lookup(self, uri):
+        track = self.session.get_track(uri)
+        return self.translate_song(track)
 
     def request_song_from_api(self, query):
         """
@@ -125,28 +132,12 @@ class SpotApi(object):
                 result_id = str(result.link.uri)
 
         self.session.player.prefetch(result)
-        self.__song_db[result_id] = self.translate_song(result)
-        return self.__song_db[result_id]
-
-    def remove_queue(self, uri):
-        try:
-            self.__queue.remove(uri)
-            return True
-        except:
-            return False
-
-    def auto_play(self):
-        # While not the most elegant solution, this will allow only one thread
-        # at a time to attempt to skip to the next song in the queue.
-        with self.__skip_lock:
-            if self.__state == 'stopped':
-                if self.__queue:
-                    track = self.session.get_track(self.__queue.popleft())
-                    self.__play_song(track)
+        return self.translate_song(result)
 
     def translate_song(self, song):
         if not song:
             return dict()
+        song.load()
         return dict(
             SongID=str(song.link.uri),
             SongName=util.asciify(song.name),
@@ -154,16 +145,11 @@ class SpotApi(object):
             AlbumName=util.asciify(song.album.name),
         )
 
-    def queue_song(self, song_id):
-        self.__queue.append(song_id)
-        self.auto_play()
-
-    def __play_song(self, song):
-        print('loading %s by %s on %s' % (song.name, song.artists[0],
-                                          song.album))
+    def play_song(self, song_uri):
+        song = self.session.get_track(song_uri)
         song.load()
+        print('loading %s by %s on %s' % (song.name, song.artists[0], song.album))
         self.session.player.load(song)
-        self.__current_song = song
         self.api_play()
 
     ###### API CALLS #######
@@ -172,10 +158,7 @@ class SpotApi(object):
         Pauses the current song
         Does nothing if no song is playing
         """
-        if not self.session or self.__state == 'paused':
-            return
         self.session.player.pause()
-        self.__state = 'paused'
 
     def api_play(self):
         """
@@ -183,24 +166,7 @@ class SpotApi(object):
         If the current song is paused it resumes the song
         If no songs are in the queue, it does nothing
         """
-        if not self.session or self.__state == 'playing':
-            return
         self.session.player.play()
-        self.__state = 'playing'
-
-    def api_play_pause(self):
-        """
-        Toggles between paused and playing
-        Scenarios of current song
-        Not Playing: Plays the song
-        Paused: Resumes playback
-        Playing: Pauses song
-        If no songs are in the queue, it does nothing
-        """
-        if self.__state == 'playing':
-            self.api_pause()
-        elif self.__state == 'paused' and self.__queue:
-            self.api_play()
 
     def api_next(self):
         """
@@ -218,8 +184,6 @@ class SpotApi(object):
         if not self.session:
             return
         self.session.player.pause()
-        self.__state = 'stopped'
-        self.__current_song = None
 
     def api_previous(self):
         """

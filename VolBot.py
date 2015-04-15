@@ -15,6 +15,8 @@
 #    along with GrooveBot.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import math
+
 from twisted.internet import reactor, utils
 
 from JlewBot import JlewBotFactory, JlewBot
@@ -24,7 +26,9 @@ class VolBot(JlewBot):
     bot_name = "foss_volbot"
     channel = "#rit-groove"
     versionNum = 1.3
-    sourceURL = "https://gitorious.org/jlew/groovebot"
+    sourceURL = "https://github.com/Qalthos/groovebot"
+    alsa_channel = 'Master'
+    volume_scale = 'logarithmic'
     vol_step = 5
     vol = 50
 
@@ -57,7 +61,14 @@ class VolBot(JlewBot):
             responder(self.sourceURL)
 
     def _set_vol(self):
-        return utils.getProcessValue('/usr/bin/amixer', ['sset', 'Master', '%d%%' % self.vol])
+        volume = self.vol
+        if self.volume_scale == 'linear' and volume > 0:
+            volume = math.log10(volume) * 50
+
+        return utils.getProcessValue(
+            '/usr/bin/amixer',
+            ['sset', self.alsa_channel, '%d%%' % volume]
+        )
 
 
 if __name__ == '__main__':
