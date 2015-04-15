@@ -27,8 +27,10 @@ class SoundCloudAPI(GstPlayerAPI):
         super(SoundCloudAPI, self).__init__()
         self.client = soundcloud.Client(client_id=self.client_id)
 
-    def lookup(self, uri):
-        raise NotImplementedError
+    def lookup(self, song_id):
+        """Look up a song from the api's unique key."""
+        track = self.client.get('/tracks/{}'.format(song_id))
+        return self.translate_song(track)
 
     def request_song_from_api(self, query):
         """
