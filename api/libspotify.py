@@ -79,7 +79,7 @@ class SpotApi(object):
             print('You must provide both a username and password')
             reactor.stop()
             return
-        self.session.login(username, password, remember_me=remember)
+        self.session.login(uname, upass, remember_me=remember)
 
     def register_next_func(self, func):
         self.session.on(
