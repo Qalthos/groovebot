@@ -79,9 +79,14 @@ class GrooveBot(VolBot):
             return
         self.status = 'playing'
         self.current_song = self.song_queue.popleft()
-        self.api_inst.play_song(self.current_song)
-        song = self.api_inst.lookup(self.current_song)
-        self.describe(self.channel, 'Playing %s' % self._display_name(song))
+        try:
+            song = self.api_inst.lookup(self.current_song)
+            self.api_inst.play_song(self.current_song)
+            self.describe(self.channel, 'Playing %s' % self._display_name(song))
+        except Exception:
+            # Eeeek, lookup failed
+            self.describe(self.channel, 'Something went wrong... ):')
+            current_song = None
         self.__flush_state()
 
     def request_queue_song(self, responder, user, channel, command, msg):
@@ -246,6 +251,13 @@ def pick_backend(backend, factory):
 
         from api.libspotify import SpotApi
         api = SpotApi()
+
+    elif backend == 'soundcloud':
+        bot.capabilities = QUEUE + PLAYBACK + CONTROL + BLAME
+        bot.quiet = QUEUE
+
+        from api.sound_cloud import SoundCloudAPI
+        api = SoundCloudAPI()
 
     bot.setup(factory, api)
 
