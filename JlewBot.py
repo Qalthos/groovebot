@@ -100,11 +100,11 @@ class JlewBotFactory(ReconnectingClientFactory):
 
     def __default_cmd(self, responder, user, channel, command, msg):
         if command == 'help':
-            commands = command
-            for cmd in self.registered_commands.keys():
-                if self.users.has_perms(user, cmd):
-                    commands = '%s, %s' % (commands, cmd)
-            responder("Available Commands: %s" % commands)
+            commands = [
+                cmd for cmd in self.registered_commands.keys()
+                if self.users.has_perms(user, cmd)
+            ]
+            responder("Available Commands: %s" % ', '.join(commands))
         else:
             responder("Command not recognized")
 
