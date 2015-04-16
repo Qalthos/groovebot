@@ -16,7 +16,8 @@ Requirements
 ------------
 GrooveBot has many requirements which change based on which backend you are using.  To run any of the bots, GrooveBot requires the Twisted.words package, on which the IRC portion of the bot depends.
 
-For Spotify support, the bot requires either spytify (and the requisite despotify C library), or pyspotify (and the requisite libspotify C libraries).  For pyspotify, but not spytify, a valid Spotify API key is also required.  For either, a Premium subscription to Spotify is required.
+For Spotify support, the bot requires either spytify (and the requisite
+despotify C library), or pyspotify version 2.0 or later (and the requisite libspotify C libraries).  For pyspotify, but not spytify, a valid Spotify API key is also required.  For either, a Premium subscription to Spotify is required.
 
 For Pandora support, GrooveBot requires Pithos.  GrooveBot in Pandora mode essentially works as a Pithos frontend, so if Pithos works for you, GrooveBot should as well.
 
